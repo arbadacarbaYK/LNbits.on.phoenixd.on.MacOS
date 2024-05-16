@@ -1,4 +1,4 @@
-# LNbits.on.phoenixd.onMacOS# Setting Up LNbits and Phoenixd on macOS
+# Setting Up LNbits and Phoenixd on macOS
 
 ## Prerequisites
 
