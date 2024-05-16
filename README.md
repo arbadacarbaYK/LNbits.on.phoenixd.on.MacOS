@@ -1,197 +1,225 @@
-# Setting Up LNbits and Phoenixd on macOS
 
-## Prerequisites
+# Setting up LNbits with `phoenixd` as a Funding Source on macOS
 
-0. Download Phoenixd for your specific Mac-Chip from https://github.com/ACINQ/phoenixd
+## 1. Install Dependencies
 
-Native MacOS x64
+### Homebrew
+If you don't have Homebrew installed, you can install it with:
+```sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
 
-    ```sh
+### Install PostgreSQL
+```sh
+brew install postgresql@14
+brew services start postgresql@14
+```
+
+### Install Poetry
+```sh
+brew install poetry
+```
+
+## 2. Set Up LNbits
+
+### Clone LNbits Repository
+```sh
+git clone https://github.com/lnbits/lnbits.git
+cd lnbits
+```
+
+### Configure Environment
+```sh
+cp .env.example .env
+nano .env
+```
+Update `.env` with:
+- Set `LNBITS_DATABASE_URL="postgres://postgres:postgres@localhost:5432/lnbits"`
+- Other required configurations as needed.
+
+### Install Dependencies and Add psycopg2-binary
+```sh
+poetry install
+poetry add psycopg2-binary
+```
+
+### Run LNbits (Initial Test)
+```sh
+poetry run lnbits --port 5000 --host 0.0.0.0
+```
+Check if LNbits is running at [http://127.0.0.1:5000](http://127.0.0.1:5000).
+
+## 3. Set Up phoenixd
+
+### Clone phoenixd Repository
+```sh
+git clone https://github.com/ACINQ/phoenixd.git
+cd phoenixd
+```
+
+### Build and Run phoenixd
+Choose the appropriate build command based on your macOS architecture:
+
+#### Native MacOS x64:
+```sh
 ./gradlew packageMacOSX64
-    ```
+```
 
-Native MacOS arm64
-
-    ```sh
+#### Native MacOS arm64:
+```sh
 ./gradlew packageMacOSArm64
-    ```
+```
 
-1. **Install Homebrew**:
-    ```sh
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    ```
+### Run phoenixd (Initial Test)
+```sh
+./phoenixd
+```
+Check if phoenixd is running at [http://127.0.0.1:9740](http://127.0.0.1:9740).
 
-2. **Install PostgreSQL**:
-    ```sh
-    brew install postgresql
-    brew services start postgresql
-    ```
+## 4. Configure Reverse Proxy with Caddy
 
-3. **Install Python and Poetry**:
-    ```sh
-    brew install python
-    curl -sSL https://install.python-poetry.org | python3 -
-    ```
+### Install Caddy
+```sh
+brew install caddy
+```
 
-## Setting Up LNbits
+### Create Caddyfile
+```sh
+sudo nano /usr/local/etc/Caddyfile
+```
 
-1. **Clone the LNbits Repository**:
-    ```sh
-    git clone https://github.com/lnbits/lnbits.git
-    cd lnbits
-    ```
-
-2. **Copy and Modify Environment File**:
-    ```sh
-    cp .env.example .env
-    nano .env
-    ```
-    Set the following variables:
-    ```env
-    LNBITS_DATABASE_URL=postgres://postgres:<password>@localhost:5432/lnbits
-    ```
-
-3. **Install Dependencies and Run LNbits**:
-    ```sh
-    poetry install
-    poetry run lnbits
-    ```
-
-## Setting Up PostgreSQL
-
-1. **Create PostgreSQL User and Database**:
-    ```sh
-    psql postgres
-    CREATE USER lnbits WITH PASSWORD 'yourpassword';
-    CREATE DATABASE lnbits OWNER lnbits;
-    ```
-
-## Setting Up Phoenixd
-
-1. **Run Phoenixd**:
-    ```sh
-    ./phoenixd &
-    ```
-
-2. **Create Phoenixd Launch Agent File**:
-    ```xml
-    <?xml version="1.0" encoding="UTF-8"?>
-    <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-    <plist version="1.0">
-    <dict>
-        <key>Label</key>
-        <string>com.user.phoenixd</string>
-        <key>ProgramArguments</key>
-        <array>
-            <string>/Users/yourusername/Desktop/phoenixd/phoenixd</string>
-        </array>
-        <key>RunAtLoad</key>
-        <true/>
-        <key>KeepAlive</key>
-        <true/>
-    </dict>
-    </plist>
-    ```
-    Save this as `~/Library/LaunchAgents/com.user.phoenixd.plist`.
-
-3. **Load the Launch Agent**:
-    ```sh
-    launchctl load ~/Library/LaunchAgents/com.user.phoenixd.plist
-    ```
-
-## Setting Up Caddy
-
-1. **Install Caddy**:
-    ```sh
-    brew install caddy
-    ```
-
-2. **Create a Caddyfile**:
-    ```sh
-    sudo nano /etc/Caddyfile
-    ```
-    Add the following content:
-    ```Caddyfile
-    toxic.lightning-pirates.com {
-      handle /api/v1/payments/sse* {
-        reverse_proxy 127.0.0.1:5000 {
-          header_up X-Forwarded-Host toxic.lightning-pirates.com
-          transport http {
-            keepalive off
-            compression off
-          }
-        }
-      }
-      reverse_proxy 127.0.0.1:5000 {
-        header_up X-Forwarded-Host toxic.lightning-pirates.com
+Add the following to the Caddyfile:
+```sh
+toxic.lightning-pirates.com {
+  handle /api/v1/payments/sse* {
+    reverse_proxy 127.0.0.1:5000 {
+      header_up X-Forwarded-Host {host}
+      transport http {
+        keepalive off
+        compression off
       }
     }
-    ```
+  }
+  reverse_proxy 127.0.0.1:5000 {
+    header_up X-Forwarded-Host {host}
+  }
+}
+```
 
-3. **Start Caddy**:
-    ```sh
-    sudo caddy start
-    ```
+### Start Caddy
+```sh
+sudo caddy start
+```
 
-## Setting Up LNbits as a Launch Agent
+## 5. Create LaunchAgents for macOS
 
-1. **Create LNbits Launch Agent File**:
-    ```xml
-    <?xml version="1.0" encoding="UTF-8"?>
-    <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-    <plist version="1.0">
+### Create phoenixd LaunchAgent
+Create `~/Library/LaunchAgents/com.user.phoenixd.plist` with:
+```sh
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.user.phoenixd</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/yourusername/projects/phoenixd/phoenixd</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+</dict>
+</plist>
+```
+
+### Create LNbits LaunchAgent
+
+Create `~/Library/LaunchAgents/com.user.lnbits.plist` with:
+```sh
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.user.lnbits</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/poetry</string>
+        <string>run</string>
+        <string>lnbits</string>
+        <string>--port</string>
+        <string>5000</string>
+        <string>--host</string>
+        <string>0.0.0.0</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>WorkingDirectory</key>
+    <string>/Users/yourusername/lnbits</string>
+    <key>EnvironmentVariables</key>
     <dict>
-        <key>Label</key>
-        <string>com.user.lnbits</string>
-        <key>ProgramArguments</key>
-        <array>
-            <string>/Users/yourusername/.local/bin/poetry</string>
-            <string>run</string>
-            <string>lnbits</string>
-        </array>
-        <key>EnvironmentVariables</key>
-        <dict>
-            <key>PYTHONUNBUFFERED</key>
-            <string>1</string>
-        </dict>
-        <key>WorkingDirectory</key>
-        <string>/Users/yourusername/Desktop/lnbits/phoenixd/lnbits</string>
-        <key>RunAtLoad</key>
-        <true/>
-        <key>KeepAlive</key>
-        <true/>
+        <key>PYTHONUNBUFFERED</key>
+        <string>1</string>
     </dict>
-    </plist>
-    ```
-    Save this as `~/Library/LaunchAgents/com.user.lnbits.plist`.
+</dict>
+</plist>
+```
 
-2. **Load the Launch Agent**:
-    ```sh
-    launchctl load ~/Library/LaunchAgents/com.user.lnbits.plist
-    ```
+### Load LaunchAgents
+```sh
+launchctl load ~/Library/LaunchAgents/com.user.phoenixd.plist
+launchctl load ~/Library/LaunchAgents/com.user.lnbits.plist
+```
 
-## Verify All Services
+## 6. Verify Running Services
 
-To check if all services are running, use the following script:
+### Create a script to check running services
+```sh
+nano ~/check_services.sh
+```
 
+Add the following content:
 ```sh
 #!/bin/bash
+```
 
-services=("com.user.phoenixd" "com.user.lnbits")
-all_running=true
-
-for service in "${services[@]}"; do
-    status=$(launchctl list | grep "$service")
-    if [[ -z $status ]]; then
-        echo "$service is NOT running"
-        all_running=false
-    else
-        echo "$service is running"
-    fi
-done
-
-if $all_running; then
-    echo "All services are running fine."
+# Check LNbits service
+```sh
+lnbits_status=$(launchctl list | grep com.user.lnbits)
+if [[ -n "$lnbits_status" ]]; then
+    echo "LNbits is running."
 else
-    echo "Some services are not running. Please check the details above."
-fi
+    echo "LNbits is not running."
+```
+
+# Check phoenixd service
+```sh
+phoenixd_status=$(launchctl list | grep com.user.phoenixd)
+if [[ -n "$phoenixd_status" ]]; then
+    echo "phoenixd is running."
+else
+    echo "phoenixd is not running."
+```
+
+# Check Caddy service
+```sh
+caddy_status=$(ps aux | grep caddy | grep -v grep)
+if [[ -n "$caddy_status" ]]; then
+    echo "Caddy is running."
+else
+    echo "Caddy is not running."
+```
+
+### Make the script executable
+```sh
+chmod +x ~/check_services.sh
+```
+
+### Run the script
+```sh
+~/check_services.sh
+```
