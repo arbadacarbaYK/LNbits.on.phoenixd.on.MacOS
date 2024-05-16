@@ -2,6 +2,20 @@
 
 ## Prerequisites
 
+0. Download Phoenixd for your specific Mac-Chip from https://github.com/ACINQ/phoenixd
+
+Native MacOS x64
+
+    ```sh
+./gradlew packageMacOSX64
+    ```
+
+Native MacOS arm64
+
+    ```sh
+./gradlew packageMacOSArm64
+    ```
+
 1. **Install Homebrew**:
     ```sh
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
