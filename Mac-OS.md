@@ -90,7 +90,7 @@ sudo nano /usr/local/etc/Caddyfile
 
 Add the following to the Caddyfile:
 ```sh
-toxic.lightning-pirates.com {
+yourdomain.com {
   handle /api/v1/payments/sse* {
     reverse_proxy 127.0.0.1:5000 {
       header_up X-Forwarded-Host {host}
