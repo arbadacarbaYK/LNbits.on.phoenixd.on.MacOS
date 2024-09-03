@@ -3,13 +3,15 @@
 We will build from binaries because some ppl had problems with their own glib version.
 So to set up LNbits with phoenixd on a free VPS running Ubuntu Linux, follow these steps:
 
+---
+
 ## **1. Install Dependencies**
 
 ### **Update and Install System Packages**
 ```sh
 sudo apt update
 sudo apt upgrade -y
-sudo apt install -y curl git python3-pip python3-venv postgresql
+sudo apt install -y curl git python3-pip python3-venv postgresql unzip
 ```
 
 ### **Install PostgreSQL**
@@ -54,6 +56,8 @@ poetry add psycopg2-binary
 poetry run lnbits --port 5000 --host 0.0.0.0
 ```
 
+Check if LNbits is running at [http://127.0.0.1:5000](http://127.0.0.1:5000).
+
 ## **3. Set Up phoenixd Using Pre-Built Binaries**
 
 ### **Download and Extract phoenixd Binary**
@@ -65,10 +69,45 @@ poetry run lnbits --port 5000 --host 0.0.0.0
    cd phoenixd
    ```
 
+### **Set Up Keyring for Phoenixd**
+
+`phoenixd` requires a `phoenix_key` for secure key management. Follow these steps to ensure the keyring is properly configured:
+
+1. **Generate or Import Phoenix Key:**
+   - If you do not already have a `phoenix_key`, generate a new one or import an existing one.
+   - To generate a new key, use the appropriate key management tool compatible with `phoenixd`.
+
+2. **Secure the Keyring Directory:**
+
+Create a directory to securely store the `phoenix_key`:
+
+```sh
+mkdir -p ~/.phoenix_key
+chmod 700 ~/.phoenix_key
+```
+
+3. **Place the `phoenix_key` File:**
+
+Copy your `phoenix_key` to the newly created directory:
+
+```sh
+cp /path/to/your/phoenix_key ~/.phoenix_key/
+```
+
+4. **Set Environment Variable for Phoenix Key Path:**
+
+Ensure that the `phoenix_key` path is set as an environment variable before starting `phoenixd`:
+
+```sh
+export PHOENIX_KEY_PATH=~/.phoenix_key/phoenix_key
+```
+
 ### **Run phoenixd (Initial Test)**
 ```sh
 ./phoenixd
 ```
+
+Check if phoenixd is running and accessible at [http://127.0.0.1:9740](http://127.0.0.1:9740).
 
 ## **4. Configure Reverse Proxy with Caddy**
 
@@ -124,10 +163,14 @@ After=network.target
 ExecStart=/path/to/phoenixd/phoenixd
 Restart=always
 User=youruser
+Environment=PHOENIX_KEY_PATH=/home/youruser/.phoenix_key/phoenix_key
+WorkingDirectory=/path/to/phoenixd
 
 [Install]
 WantedBy=multi-user.target
 ```
+
+Replace `/path/to/phoenixd` with the actual path where you extracted `phoenixd`, and replace `youruser` with your actual username.
 
 ### **Create LNbits Service File**
 ```sh
@@ -141,7 +184,7 @@ Description=LNbits
 After=network.target
 
 [Service]
-ExecStart=/usr/local/bin/poetry run lnbits --port 5000 --host 0.0.0.0
+ExecStart=/home/youruser/.local/bin/poetry run lnbits --port 5000 --host 0.0.0.0
 WorkingDirectory=/path/to/lnbits
 Restart=always
 User=youruser
@@ -167,7 +210,7 @@ sudo systemctl enable lnbits
 nano ~/check_services.sh
 ```
 
-Add:
+Add the following content:
 ```sh
 #!/bin/bash
 if systemctl is-active --quiet phoenixd; then
@@ -194,3 +237,5 @@ fi
 chmod +x ~/check_services.sh
 ~/check_services.sh
 ```
+
+---
