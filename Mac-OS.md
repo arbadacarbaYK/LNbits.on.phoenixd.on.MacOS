@@ -1,10 +1,13 @@
 
 # Setting up LNbits with `phoenixd` as a Funding Source on macOS
 
+---
+
 ## 1. Install Dependencies
 
-### Homebrew
-If you don't have Homebrew installed, you can install it with:
+### Install Homebrew
+If you don't have Homebrew installed, install it first:
+
 ```sh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
@@ -29,15 +32,22 @@ cd lnbits
 ```
 
 ### Configure Environment
+Copy the example environment file and modify it:
+
 ```sh
 cp .env.example .env
 nano .env
 ```
-Update `.env` with:
-- Set `LNBITS_DATABASE_URL="postgres://postgres:postgres@localhost:5432/lnbits"`
-- Other required configurations as needed.
 
-### Install Dependencies and Add psycopg2-binary
+Update `.env` with the following configuration:
+
+```sh
+LNBITS_DATABASE_URL="postgres://postgres:postgres@localhost:5432/lnbits"
+```
+
+Other configurations may also be necessary depending on your setup.
+
+### Install Dependencies and Add `psycopg2-binary`
 ```sh
 poetry install
 poetry add psycopg2-binary
@@ -47,34 +57,53 @@ poetry add psycopg2-binary
 ```sh
 poetry run lnbits --port 5000 --host 0.0.0.0
 ```
+
 Check if LNbits is running at [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
-## 3. Set Up phoenixd
+## 3. Set Up phoenixd Using Binaries
 
-### Clone phoenixd Repository
+### Download and Extract Phoenixd Binary
+
+Visit the [phoenixd releases page](https://github.com/ACINQ/phoenixd/releases) and download the appropriate binary for your macOS architecture:
+
+- **For macOS x64:** `phoenix-0.3.4-macos-x64.zip`
+- **For macOS arm64:** `phoenix-0.3.4-macos-arm64.zip`
+
+After downloading, extract the binary:
+
 ```sh
-git clone https://github.com/ACINQ/phoenixd.git
-cd phoenixd
+unzip phoenix-0.3.4-macos-<architecture>.zip
+cd phoenix-0.3.4-macos-<architecture>
 ```
 
-### Build and Run phoenixd
-Choose the appropriate build command based on your macOS architecture:
+Replace `<architecture>` with `x64` or `arm64` depending on your macOS hardware.
 
-#### Native MacOS x64:
+### Set Up Keyring for Phoenixd
+
+`phoenixd` uses `phoenix_key` for key management. The binary should already be configured to use a secure keyring, but ensure that the keyring is set up correctly:
+
+1. **Generate or Load the Key:**
+   - Ensure you have your `phoenix_key` stored securely.
+   - If it's your first time setting up, you might need to generate a new key using the instructions provided in the `phoenixd` documentation or a compatible key manager.
+
+2. **Configure Environment for Keyring Access:**
+
+Ensure that any environment variables or configurations required for `phoenix_key` access are set up correctly. This typically involves setting up a secure directory for the keyring.
+
 ```sh
-./gradlew packageMacOSX64
+export PHOENIX_KEY_PATH=/path/to/your/phoenix_key
 ```
 
-#### Native MacOS arm64:
-```sh
-./gradlew packageMacOSArm64
-```
+Ensure this path is secure and accessible only by the `phoenixd` process.
 
 ### Run phoenixd (Initial Test)
+Start `phoenixd` using the binary:
+
 ```sh
 ./phoenixd
 ```
-Check if phoenixd is running at [http://127.0.0.1:9740](http://127.0.0.1:9740).
+
+Check if `phoenixd` is running and accessible at [http://127.0.0.1:9740](http://127.0.0.1:9740).
 
 ## 4. Configure Reverse Proxy with Caddy
 
@@ -89,6 +118,7 @@ sudo nano /usr/local/etc/Caddyfile
 ```
 
 Add the following to the Caddyfile:
+
 ```sh
 yourdomain.com {
   handle /api/v1/payments/sse* {
@@ -114,8 +144,10 @@ sudo caddy start
 ## 5. Create LaunchAgents for macOS
 
 ### Create phoenixd LaunchAgent
-Create `~/Library/LaunchAgents/com.user.phoenixd.plist` with:
-```sh
+
+Create `~/Library/LaunchAgents/com.user.phoenixd.plist` with the following content:
+
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -124,7 +156,7 @@ Create `~/Library/LaunchAgents/com.user.phoenixd.plist` with:
     <string>com.user.phoenixd</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/yourusername/projects/phoenixd/phoenixd</string>
+        <string>/Users/yourusername/phoenix-0.3.4-macos-<architecture>/phoenixd</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
@@ -134,10 +166,13 @@ Create `~/Library/LaunchAgents/com.user.phoenixd.plist` with:
 </plist>
 ```
 
+Replace `<architecture>` with `x64` or `arm64` as needed.
+
 ### Create LNbits LaunchAgent
 
-Create `~/Library/LaunchAgents/com.user.lnbits.plist` with:
-```sh
+Create `~/Library/LaunchAgents/com.user.lnbits.plist` with the following content:
+
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -170,6 +205,7 @@ Create `~/Library/LaunchAgents/com.user.lnbits.plist` with:
 ```
 
 ### Load LaunchAgents
+
 ```sh
 launchctl load ~/Library/LaunchAgents/com.user.phoenixd.plist
 launchctl load ~/Library/LaunchAgents/com.user.lnbits.plist
@@ -177,49 +213,54 @@ launchctl load ~/Library/LaunchAgents/com.user.lnbits.plist
 
 ## 6. Verify Running Services
 
-### Create a script to check running services
+### Create a Script to Check Running Services
+
+Create a new script:
+
 ```sh
 nano ~/check_services.sh
 ```
 
 Add the following content:
+
 ```sh
 #!/bin/bash
-```
 
 # Check LNbits service
-```sh
 lnbits_status=$(launchctl list | grep com.user.lnbits)
 if [[ -n "$lnbits_status" ]]; then
     echo "LNbits is running."
 else
     echo "LNbits is not running."
-```
+fi
 
 # Check phoenixd service
-```sh
 phoenixd_status=$(launchctl list | grep com.user.phoenixd)
 if [[ -n "$phoenixd_status" ]]; then
     echo "phoenixd is running."
 else
     echo "phoenixd is not running."
-```
+fi
 
 # Check Caddy service
-```sh
 caddy_status=$(ps aux | grep caddy | grep -v grep)
 if [[ -n "$caddy_status" ]]; then
     echo "Caddy is running."
 else
     echo "Caddy is not running."
+fi
 ```
 
-### Make the script executable
+### Make the Script Executable
+
 ```sh
 chmod +x ~/check_services.sh
 ```
 
-### Run the script
+### Run the Script
+
 ```sh
 ~/check_services.sh
 ```
+
+---
