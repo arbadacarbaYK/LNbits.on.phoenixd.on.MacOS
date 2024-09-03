@@ -1,91 +1,88 @@
-# LNbits with Phoenixd on Ubuntu VPS
-To set up LNbits with phoenixd on a free VPS running Ubuntu Linux, follow these steps:
+### **LNbits with Phoenixd on an Ubuntu VPS**
 
-## 1. Install Dependencies
+We will build from binaries because some ppl had problems with their own glib version.
+So to set up LNbits with phoenixd on a free VPS running Ubuntu Linux, follow these steps:
 
-### Update and Install System Packages:**
+## **1. Install Dependencies**
+
+### **Update and Install System Packages**
 ```sh
 sudo apt update
 sudo apt upgrade -y
 sudo apt install -y curl git python3-pip python3-venv postgresql
 ```
 
-### Install PostgreSQL:**
+### **Install PostgreSQL**
 ```sh
 sudo -u postgres psql -c "CREATE USER postgres WITH PASSWORD 'postgres';"
 sudo -u postgres psql -c "CREATE DATABASE lnbits OWNER postgres;"
 ```
 
-### Install Poetry:**
+### **Install Poetry**
 ```sh
 curl -sSL https://install.python-poetry.org | python3 -
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-## 2. Set Up LNbits
+## **2. Set Up LNbits**
 
-### Clone LNbits Repository:**
+### **Clone LNbits Repository**
 ```sh
 git clone https://github.com/lnbits/lnbits.git
 cd lnbits
 ```
 
-### Configure Environment:**
+### **Configure Environment**
 ```sh
 cp .env.example .env
 nano .env
 ```
+
 Update `.env` with:
 ```sh
 LNBITS_DATABASE_URL="postgres://postgres:postgres@localhost:5432/lnbits"
 ```
 
-### Install Dependencies and Add `psycopg2-binary`:**
+### **Install Dependencies and Add `psycopg2-binary`**
 ```sh
 poetry install
 poetry add psycopg2-binary
 ```
 
-### Run LNbits (Initial Test):**
+### **Run LNbits (Initial Test)**
 ```sh
 poetry run lnbits --port 5000 --host 0.0.0.0
 ```
 
-## 3. Set Up phoenixd
+## **3. Set Up phoenixd Using Pre-Built Binaries**
 
-### Install Java Development Kit (JDK):**
+### **Download and Extract phoenixd Binary**
+1. **Navigate to the phoenixd release page** on GitHub: [phoenixd Releases](https://github.com/ACINQ/phoenixd/releases)
+2. **Download the appropriate binary for your system** (e.g., `phoenix-0.3.4-linux-x64.zip`).
+3. **Extract the downloaded file:**
+   ```sh
+   unzip phoenix-0.3.4-linux-x64.zip -d phoenixd
+   cd phoenixd
+   ```
+
+### **Run phoenixd (Initial Test)**
 ```sh
-sudo apt install -y openjdk-17-jdk
+./phoenixd
 ```
 
-### Clone phoenixd Repository:**
-```sh
-git clone https://github.com/ACINQ/phoenixd.git
-cd phoenixd
-```
+## **4. Configure Reverse Proxy with Caddy**
 
-### Build phoenixd:**
-```sh
-./gradlew package
-```
-
-### Run phoenixd (Initial Test):**
-```sh
-./build/install/phoenixd/bin/phoenixd
-```
-
-## 4. Configure Reverse Proxy with Caddy
-
-### Install Caddy:**
+### **Install Caddy**
 ```sh
 sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
 curl -fsSL https://getcaddy.com | bash
 ```
 
-### Create Caddyfile:**
+### **Create Caddyfile**
 ```sh
 sudo nano /etc/caddy/Caddyfile
 ```
+
 Add the following:
 ```sh
 yourdomain.com {
@@ -104,26 +101,27 @@ yourdomain.com {
 }
 ```
 
-### Start Caddy:**
+### **Start Caddy**
 ```sh
 sudo systemctl start caddy
 sudo systemctl enable caddy
 ```
 
-## 5. Create Systemd Service Files
+## **5. Create Systemd Service Files**
 
-### Create phoenixd Service File:**
+### **Create phoenixd Service File**
 ```sh
 sudo nano /etc/systemd/system/phoenixd.service
 ```
+
 Add the following content:
-```sh
+```ini
 [Unit]
 Description=phoenixd
 After=network.target
 
 [Service]
-ExecStart=/path/to/phoenixd/build/install/phoenixd/bin/phoenixd
+ExecStart=/path/to/phoenixd/phoenixd
 Restart=always
 User=youruser
 
@@ -131,12 +129,13 @@ User=youruser
 WantedBy=multi-user.target
 ```
 
-### Create LNbits Service File:**
+### **Create LNbits Service File**
 ```sh
 sudo nano /etc/systemd/system/lnbits.service
 ```
+
 Add the following content:
-```sh
+```ini
 [Unit]
 Description=LNbits
 After=network.target
@@ -152,7 +151,7 @@ Environment=PYTHONUNBUFFERED=1
 WantedBy=multi-user.target
 ```
 
-### Reload Systemd and Start Services:**
+### **Reload Systemd and Start Services**
 ```sh
 sudo systemctl daemon-reload
 sudo systemctl start phoenixd
@@ -161,12 +160,13 @@ sudo systemctl start lnbits
 sudo systemctl enable lnbits
 ```
 
-## 6. Verify Running Services
+## **6. Verify Running Services**
 
-### Create a Script to Check Running Services:**
+### **Create a Script to Check Running Services**
 ```sh
 nano ~/check_services.sh
 ```
+
 Add:
 ```sh
 #!/bin/bash
@@ -189,7 +189,7 @@ else
 fi
 ```
 
-* **Make the Script Executable and Run It:**
+### **Make the Script Executable and Run It**
 ```sh
 chmod +x ~/check_services.sh
 ~/check_services.sh
