@@ -1,7 +1,6 @@
 ### **LNbits with Phoenixd on an Ubuntu VPS**
 
-We will build from binaries because some ppl had problems with their own glib version.
-So to set up LNbits with phoenixd on a free VPS running Ubuntu Linux, follow these steps:
+We will build from binaries because some people had issues with their glib version. To set up LNbits with phoenixd on a free VPS running Ubuntu Linux, follow these steps:
 
 ---
 
@@ -71,11 +70,12 @@ Check if LNbits is running at [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
 ### **Set Up Keyring for Phoenixd**
 
-`phoenixd` requires a `phoenix_key` for secure key management. Follow these steps to ensure the keyring is properly configured:
-
-1. **Generate or Import Phoenix Key:**
-   - If you do not already have a `phoenix_key`, generate a new one or import an existing one.
-   - To generate a new key, use the appropriate key management tool compatible with `phoenixd`.
+1. **Find the Phoenix Key**:
+   - You can locate the `phoenix_key` in the Phoenix configuration file:
+     ```sh
+     cat ~/.phoenix/phoenix.conf
+     ```
+   - The configuration file contains the path to your Phoenix key.
 
 2. **Secure the Keyring Directory:**
 
@@ -88,10 +88,10 @@ chmod 700 ~/.phoenix_key
 
 3. **Place the `phoenix_key` File:**
 
-Copy your `phoenix_key` to the newly created directory:
+Copy your `phoenix_key` from the path found in the configuration file to the newly created directory:
 
 ```sh
-cp /path/to/your/phoenix_key ~/.phoenix_key/
+cp /path/to/phoenix_key ~/.phoenix_key/
 ```
 
 4. **Set Environment Variable for Phoenix Key Path:**
@@ -238,4 +238,5 @@ chmod +x ~/check_services.sh
 ~/check_services.sh
 ```
 
----
+--- 
+
