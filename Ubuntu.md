@@ -1,8 +1,4 @@
-### **LNbits with Phoenixd on an Ubuntu VPS**
-
-We will build from binaries because some people had issues with their glib version. To set up LNbits with phoenixd on a free VPS running Ubuntu Linux, follow these steps:
-
----
+# Setting up LNbits with `phoenixd` on Ubuntu VPS
 
 ## **1. Install Dependencies**
 
@@ -42,6 +38,10 @@ nano .env
 Update `.env` with:
 ```sh
 LNBITS_DATABASE_URL="postgres://postgres:postgres@localhost:5432/lnbits"
+# Enable HTTPS support behind a proxy
+FORWARDED_ALLOW_IPS="*"
+PHOENIXD_API_ENDPOINT=http://127.0.0.1:9740/
+PHOENIXD_API_PASSWORD="your_phoenixd_key"
 ```
 
 ### **Install Dependencies and Add `psycopg2-binary`**
@@ -68,10 +68,10 @@ Check if LNbits is running at [http://127.0.0.1:5000](http://127.0.0.1:5000).
    cd phoenixd
    ```
 
-### **Set Up Keyring for Phoenixd**
+### **Set up Keyring for Phoenixd**
 
 1. **Find the Phoenix Key**:
-   - You can locate the `phoenix_key` in the Phoenix configuration file:
+   - Locate the `phoenix_key` in the Phoenix configuration file:
      ```sh
      cat ~/.phoenix/phoenix.conf
      ```
@@ -79,7 +79,7 @@ Check if LNbits is running at [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
 2. **Secure the Keyring Directory:**
 
-Create a directory to securely store the `phoenix_key`:
+Create a directory to securely store your `phoenix_key`:
 
 ```sh
 mkdir -p ~/.phoenix_key
@@ -109,12 +109,12 @@ export PHOENIX_KEY_PATH=~/.phoenix_key/phoenix_key
 
 Check if phoenixd is running and accessible at [http://127.0.0.1:9740](http://127.0.0.1:9740).
 
-## **4. Configure Reverse Proxy with Caddy**
+## **4. Configure HTTPS and Reverse Proxy with Caddy**
 
 ### **Install Caddy**
 ```sh
 sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
-curl -fsSL https://getcaddy.com | bash
+curl -fsSL https://getcaddy.com | sudo bash
 ```
 
 ### **Create Caddyfile**
@@ -125,6 +125,10 @@ sudo nano /etc/caddy/Caddyfile
 Add the following:
 ```sh
 yourdomain.com {
+  # Automatically get SSL certificates with HTTPS
+  tls your-email@example.com
+  
+  # Handle Server-Sent Events (SSE) for payments
   handle /api/v1/payments/sse* {
     reverse_proxy 127.0.0.1:5000 {
       header_up X-Forwarded-Host {host}
@@ -134,11 +138,11 @@ yourdomain.com {
       }
     }
   }
+  
+  # Reverse proxy for LNbits
   reverse_proxy 127.0.0.1:5000 {
     header_up X-Forwarded-Host {host}
   }
-
-  tls your-email@example.com
 }
 ```
 
@@ -172,7 +176,7 @@ WorkingDirectory=/path/to/phoenixd
 WantedBy=multi-user.target
 ```
 
-Replace `/path/to/phoenixd` with the actual path where you extracted `phoenixd`, and replace `youruser` with your actual username.
+Replace `/path/to/phoenixd` with the actual path where you extracted `phoenixd`, and `youruser` with your actual username.
 
 ### **Create LNbits Service File**
 ```sh
