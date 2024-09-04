@@ -1,6 +1,7 @@
-### Other commonly used VPS OS and necessary adaptations:
-
 ---
+# Changes needed for other distros
+---
+
 
 ### **1. CentOS / RHEL (Red Hat Enterprise Linux)**
 
@@ -11,7 +12,7 @@
   sudo yum update -y
   sudo yum install -y curl git python3-pip python3-venv postgresql-server postgresql-contrib
   ```
-  
+
 - **Install PostgreSQL**: Initialize and start the PostgreSQL service.
   ```sh
   sudo postgresql-setup initdb
@@ -34,6 +35,26 @@
   sudo yum-config-manager --add-repo https://repo.caddyserver.com/stable/caddy.repo
   sudo yum install caddy
   ```
+
+- **Configure phoenixd Key Management**
+
+  1. **Generate a New Key Pair**:
+     ```sh
+     ./phoenixd --generate-keys
+     ```
+     Save the public/private key pair securely.
+
+  2. **Store Keys Securely**:
+     Place the keys in a secure directory, accessible to `phoenixd`, and update your LNbits `.env` configuration file:
+     ```sh
+     nano /path/to/lnbits/.env
+     ```
+
+     Update with:
+     ```env
+     PHOENIXD_PRIVATE_KEY="/path/to/phoenixd_private.key"
+     PHOENIXD_PUBLIC_KEY="/path/to/phoenixd_public.key"
+     ```
 
 - **Service Files**: The systemd service files remain the same as on Ubuntu or Debian.
 
@@ -70,6 +91,26 @@
   sudo dnf install -y caddy
   ```
 
+- **Configure phoenixd Key Management**
+
+  1. **Generate a New Key Pair**:
+     ```sh
+     ./phoenixd --generate-keys
+     ```
+     Save the public/private key pair securely.
+
+  2. **Store Keys Securely**:
+     Place the keys in a secure directory, accessible to `phoenixd`, and update your LNbits `.env` configuration file:
+     ```sh
+     nano /path/to/lnbits/.env
+     ```
+
+     Update with:
+     ```env
+     PHOENIXD_PRIVATE_KEY="/path/to/phoenixd_private.key"
+     PHOENIXD_PUBLIC_KEY="/path/to/phoenixd_public.key"
+     ```
+
 - **Service Files**: Use the same systemd service files as on Ubuntu/Debian.
 
 ---
@@ -105,14 +146,26 @@
   sudo dnf install -y caddy
   ```
 
+- **Configure phoenixd Key Management**
+
+  1. **Generate a New Key Pair**:
+     ```sh
+     ./phoenixd --generate-keys
+     ```
+     Save the public/private key pair securely.
+
+  2. **Store Keys Securely**:
+     Place the keys in a secure directory, accessible to `phoenixd`, and update your LNbits `.env` configuration file:
+     ```sh
+     nano /path/to/lnbits/.env
+     ```
+
+     Update with:
+     ```env
+     PHOENIXD_PRIVATE_KEY="/path/to/phoenixd_private.key"
+     PHOENIXD_PUBLIC_KEY="/path/to/phoenixd_public.key"
+     ```
+
 - **Service Files**: The same systemd service files as on Ubuntu/Debian.
 
 ---
-
-### **Key Points for All Systems:**
-
-- **System Packages**: Ensure you install `curl`, `git`, `python3`, `pip`, `venv`, and `postgresql` using the appropriate package manager for your OS.
-- **PostgreSQL Setup**: Initialization and service start commands vary slightly between distributions.
-- **Caddy Installation**: Method of installation might differ. Always check the Caddy website or use a package manager.
-- **Poetry Installation**: This step is consistent across all distributions.
-- **Systemd Service Files**: Typically, no changes are needed; the instructions provided for Ubuntu/Debian should work for most Linux distributions using `systemd`.
