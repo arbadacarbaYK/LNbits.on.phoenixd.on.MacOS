@@ -1,14 +1,8 @@
----
-
 # Setting up LNbits with `phoenixd` as a Funding Source on macOS
-
----
 
 ## 1. Install Dependencies
 
 ### Install Homebrew
-If you don't have Homebrew installed, install it first:
-
 ```sh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
@@ -44,6 +38,12 @@ Update `.env` with the following configuration:
 
 ```sh
 LNBITS_DATABASE_URL="postgres://postgres:postgres@localhost:5432/lnbits"
+LNBITS_BACKEND_WALLET_CLASS=PhoenixdWallet
+PHOENIXD_API_ENDPOINT=http://127.0.0.1:9740/
+PHOENIXD_API_PASSWORD="your_phoenixd_key"
+
+# Enable HTTPS support behind a proxy
+FORWARDED_ALLOW_IPS="*"
 ```
 
 Other configurations may also be necessary depending on your setup.
@@ -107,7 +107,7 @@ Start `phoenixd` using the binary:
 
 Check if `phoenixd` is running and accessible at [http://127.0.0.1:9740](http://127.0.0.1:9740).
 
-## 4. Configure Reverse Proxy with Caddy
+## 4. Configure HTTPS and Reverse Proxy with Caddy
 
 ### Install Caddy
 ```sh
@@ -123,6 +123,10 @@ Add the following to the Caddyfile:
 
 ```sh
 yourdomain.com {
+  # Automatically get SSL certificates with HTTPS
+  tls your-email@example.com  # Use a valid email for Let's Encrypt
+  
+  # Handle Server-Sent Events (SSE) for payments
   handle /api/v1/payments/sse* {
     reverse_proxy 127.0.0.1:5000 {
       header_up X-Forwarded-Host {host}
@@ -132,16 +136,22 @@ yourdomain.com {
       }
     }
   }
+
+  # Reverse proxy for LNbits
   reverse_proxy 127.0.0.1:5000 {
     header_up X-Forwarded-Host {host}
   }
 }
 ```
 
+Replace `yourdomain.com` with your actual domain and ensure you have DNS configured to point to your server.
+
 ### Start Caddy
 ```sh
 sudo caddy start
 ```
+
+Check if your LNbits instance is accessible via HTTPS at `https://yourdomain.com`.
 
 ## 5. Create LaunchAgents for macOS
 
@@ -176,7 +186,7 @@ Create `~/Library/LaunchAgents/com.user.lnbits.plist` with the following content
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
@@ -265,4 +275,4 @@ chmod +x ~/check_services.sh
 ~/check_services.sh
 ```
 
----
+--- 
