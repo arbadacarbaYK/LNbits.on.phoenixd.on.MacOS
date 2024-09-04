@@ -1,12 +1,10 @@
-### **LNbits with Phoenixd on a Debian VPS**
-
-To set up **LNbits** with **phoenixd** on a Debian VPS, follow these steps:
+# **LNbits with Phoenixd on a Debian VPS**
 
 ## **1. Install Dependencies**
 
 ### **Update and Install System Packages**
 
-First, ensure your system is up to date and install the necessary packages:
+Ensure your system is up-to-date and install the necessary packages:
 
 ```sh
 sudo apt update
@@ -30,14 +28,14 @@ sudo apt install -y curl git python3-pip python3-venv postgresql postgresql-cont
 
 ### **Install Poetry**
 
-Install Poetry, which is used for managing Python dependencies:
+Install Poetry for managing Python dependencies:
 
 ```sh
 curl -sSL https://install.python-poetry.org | python3 -
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-Add the Poetry path to your shell profile to ensure it is available in your current session:
+Add the Poetry path to your shell profile:
 
 ```sh
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
@@ -68,6 +66,10 @@ Update the `.env` file with the following settings:
 
 ```env
 LNBITS_DATABASE_URL="postgres://postgres:postgres@localhost:5432/lnbits"
+# Enable HTTPS support behind a proxy
+FORWARDED_ALLOW_IPS="*"
+PHOENIXD_API_ENDPOINT=http://127.0.0.1:9740/
+PHOENIXD_API_PASSWORD="your_phoenixd_key"
 ```
 
 ### **Install Dependencies and Add `psycopg2-binary`**
@@ -112,7 +114,7 @@ Run phoenixd to ensure it starts correctly:
 ./phoenixd
 ```
 
-## **4. Configure Reverse Proxy with Caddy**
+## **4. Configure HTTPS and Reverse Proxy with Caddy**
 
 ### **Install Caddy**
 
@@ -120,7 +122,7 @@ Install Caddy using the following commands:
 
 ```sh
 sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
-curl -fsSL https://getcaddy.com | bash
+curl -fsSL https://getcaddy.com | sudo bash
 ```
 
 ### **Create Caddyfile**
@@ -135,6 +137,10 @@ Add the following configuration:
 
 ```caddyfile
 yourdomain.com {
+  # Automatically get SSL certificates with HTTPS
+  tls your-email@example.com
+  
+  # Handle Server-Sent Events (SSE) for payments
   handle /api/v1/payments/sse* {
     reverse_proxy 127.0.0.1:5000 {
       header_up X-Forwarded-Host {host}
@@ -144,6 +150,8 @@ yourdomain.com {
       }
     }
   }
+  
+  # Reverse proxy for LNbits
   reverse_proxy 127.0.0.1:5000 {
     header_up X-Forwarded-Host {host}
   }
@@ -289,3 +297,5 @@ Make the script executable and run it to verify the services:
 chmod +x ~/check_services.sh
 ~/check_services.sh
 ```
+
+---
