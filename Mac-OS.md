@@ -1,3 +1,4 @@
+---
 
 # Setting up LNbits with `phoenixd` as a Funding Source on macOS
 
@@ -82,19 +83,20 @@ Replace `<architecture>` with `x64` or `arm64` depending on your macOS hardware.
 
 `phoenixd` uses `phoenix_key` for key management. The binary should already be configured to use a secure keyring, but ensure that the keyring is set up correctly:
 
-1. **Generate or Load the Key:**
-   - Ensure you have your `phoenix_key` stored securely.
-   - If it's your first time setting up, you might need to generate a new key using the instructions provided in the `phoenixd` documentation or a compatible key manager.
+1. **Retrieve the Phoenix Key:**
+   - The `phoenix_key` can be found by running the following command:
+   ```sh
+   cat ~/.phoenix/phoenix.conf
+   ```
 
 2. **Configure Environment for Keyring Access:**
+   Set up the environment variable to point to your `phoenix_key`:
 
-Ensure that any environment variables or configurations required for `phoenix_key` access are set up correctly. This typically involves setting up a secure directory for the keyring.
+   ```sh
+   export PHOENIX_KEY_PATH=/path/to/your/phoenix_key
+   ```
 
-```sh
-export PHOENIX_KEY_PATH=/path/to/your/phoenix_key
-```
-
-Ensure this path is secure and accessible only by the `phoenixd` process.
+   Ensure this path is secure and accessible only by the `phoenixd` process.
 
 ### Run phoenixd (Initial Test)
 Start `phoenixd` using the binary:
