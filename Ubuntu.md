@@ -137,6 +137,8 @@ yourdomain.com {
   reverse_proxy 127.0.0.1:5000 {
     header_up X-Forwarded-Host {host}
   }
+
+  tls your-email@example.com
 }
 ```
 
