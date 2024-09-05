@@ -49,7 +49,9 @@ source ~/.bashrc
 Clone the LNbits repository from GitHub and navigate to its directory:
 
 ```sh
-git clone https://github.com/lnbits/lnbits.git
+wget https://raw.githubusercontent.com/lnbits/lnbits/snapcraft/lnbits.sh
+chmod +x lnbits.sh
+./lnbits.sh
 cd lnbits
 ```
 
@@ -102,7 +104,11 @@ You should be able to access LNbits at [http://127.0.0.1:5000](http://127.0.0.1:
 3. **Extract the downloaded file:**
 
    ```sh
-   unzip phoenix-0.3.4-linux-x64.zip -d phoenixd
+   wget https://github.com/ACINQ/phoenixd/releases/download/v0.3.4/phoenix-0.3.4-linux-x64.zip
+   sudo apt install -y unzip
+   unzip phoenix-0.3.4-linux-x64.zip
+   chmod +x phoenix-0.3.4-linux-x64/phoenixd
+   ./phoenix-0.3.4-linux-x64/phoenixd
    cd phoenixd
    ```
 
