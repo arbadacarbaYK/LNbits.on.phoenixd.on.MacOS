@@ -1,4 +1,4 @@
-# Setting up LNbits with `phoenixd` on Ubuntu VPS
+# Setting up LNbits with `phoenixd` on Ubuntu VPS (SQLite Version)
 
 ## **1. Install Dependencies**
 
@@ -6,13 +6,7 @@
 ```sh
 sudo apt update
 sudo apt upgrade -y
-sudo apt install -y curl git python3-pip python3-venv postgresql unzip
-```
-
-### **Install PostgreSQL**
-```sh
-sudo -u postgres psql -c "CREATE USER postgres WITH PASSWORD 'postgres';"
-sudo -u postgres psql -c "CREATE DATABASE lnbits OWNER postgres;"
+sudo apt install -y curl git python3-pip python3-venv unzip
 ```
 
 ### **Install Poetry**
@@ -39,17 +33,17 @@ nano .env
 
 Update `.env` with:
 ```sh
-LNBITS_DATABASE_URL="postgres://postgres:postgres@localhost:5432/lnbits"
+LNBITS_DATA_FOLDER="./data"
+# LNBITS_DATABASE_URL="postgres://user:password@host:port/databasename"
 # Enable HTTPS support behind a proxy
 FORWARDED_ALLOW_IPS="*"
 PHOENIXD_API_ENDPOINT=http://127.0.0.1:9740/
 PHOENIXD_API_PASSWORD="your_phoenixd_key"
 ```
 
-### **Install Dependencies and Add `psycopg2-binary`**
+### **Install Dependencies**
 ```sh
 poetry install
-poetry add psycopg2-binary
 ```
 
 ### **Run LNbits (Initial Test)**
@@ -59,6 +53,8 @@ poetry run lnbits --port 5000 --host 0.0.0.0
 
 Check if LNbits is running at [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
+Since you're using **SQLite**, LNbits will automatically create a SQLite database in the `./data` folder.
+
 ## **3. Set Up phoenixd Using Pre-Built Binaries**
 
 ### **Download and Extract phoenixd Binary**
@@ -66,7 +62,7 @@ Check if LNbits is running at [http://127.0.0.1:5000](http://127.0.0.1:5000).
 2. **Download the appropriate binary for your system** (e.g., `phoenix-0.3.4-linux-x64.zip`).
 3. **Extract the downloaded file:**
    ```sh
-   wget https://github.com/ACINQ/phoenixd/releases/download/v0.3.4/phoenix-0.3.4-linunzip phoenix-0.3.4-linux-x64.zip -d phoenixdux-x64.zip
+   wget https://github.com/ACINQ/phoenixd/releases/download/v0.3.4/phoenix-0.3.4-linux-x64.zip
    sudo apt install -y unzip
    unzip phoenix-0.3.4-linux-x64.zip
    chmod +x phoenix-0.3.4-linux-x64/phoenixd
@@ -250,5 +246,4 @@ chmod +x ~/check_services.sh
 ~/check_services.sh
 ```
 
---- 
-
+---
