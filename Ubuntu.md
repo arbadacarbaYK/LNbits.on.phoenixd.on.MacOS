@@ -1,4 +1,4 @@
-# Setting up LNbits with `phoenixd` on Ubuntu VPS (SQLite Version)
+# Setting up LNbits with phoenixd on Ubuntu VPS (SQLite Version)
 
 ## **1. Install Dependencies**
 
@@ -15,9 +15,15 @@ curl -sSL https://install.python-poetry.org | python3 -
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
+Add the Poetry path to your shell profile:
+```sh
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
 ## **2. Set Up LNbits**
 
-### **Clone LNbits Repository**
+### **Download and Set Up LNbits**
 ```sh
 wget https://raw.githubusercontent.com/lnbits/lnbits/snapcraft/lnbits.sh
 chmod +x lnbits.sh
@@ -26,13 +32,19 @@ cd lnbits
 ```
 
 ### **Configure Environment**
+Copy the example environment file and edit it:
 ```sh
 cp .env.example .env
 nano .env
 ```
 
 Update `.env` with:
-```sh
+```env
+# Database: to use SQLite, specify LNBITS_DATA_FOLDER
+#           to use PostgreSQL, specify LNBITS_DATABASE_URL=postgres://...
+#           to use CockroachDB, specify LNBITS_DATABASE_URL=cockroachdb://...
+# for both PostgreSQL and CockroachDB, you'll need to install
+#   psycopg2 as an additional dependency
 LNBITS_DATA_FOLDER="./data"
 # LNBITS_DATABASE_URL="postgres://user:password@host:port/databasename"
 # Enable HTTPS support behind a proxy
@@ -53,63 +65,52 @@ poetry run lnbits --port 5000 --host 0.0.0.0
 
 Check if LNbits is running at [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
-Since you're using **SQLite**, LNbits will automatically create a SQLite database in the `./data` folder.
-
 ## **3. Set Up phoenixd Using Pre-Built Binaries**
 
 ### **Download and Extract phoenixd Binary**
-1. **Navigate to the phoenixd release page** on GitHub: [phoenixd Releases](https://github.com/ACINQ/phoenixd/releases)
-2. **Download the appropriate binary for your system** (e.g., `phoenix-0.3.4-linux-x64.zip`).
-3. **Extract the downloaded file:**
+
+1. **Download the appropriate binary for your system**:
    ```sh
    wget https://github.com/ACINQ/phoenixd/releases/download/v0.3.4/phoenix-0.3.4-linux-x64.zip
+   ```
+
+2. **Extract the downloaded file**:
+   ```sh
    sudo apt install -y unzip
    unzip phoenix-0.3.4-linux-x64.zip
    chmod +x phoenix-0.3.4-linux-x64/phoenixd
+   ```
+
+3. **Run phoenixd**:
+   ```sh
    ./phoenix-0.3.4-linux-x64/phoenixd
-   cd phoenixd
    ```
 
 ### **Set up Keyring for Phoenixd**
 
 1. **Find the Phoenix Key**:
-   - Locate the `phoenix_key` in the Phoenix configuration file:
-     ```sh
-     cat ~/.phoenix/phoenix.conf
-     ```
-   - The configuration file contains the path to your Phoenix key.
+   ```sh
+   cat ~/.phoenix/phoenix.conf
+   ```
+   - This file contains the path to your Phoenix key.
 
-2. **Secure the Keyring Directory:**
+2. **Secure the Keyring Directory**:
+   ```sh
+   mkdir -p ~/.phoenix_key
+   chmod 700 ~/.phoenix_key
+   ```
 
-Create a directory to securely store your `phoenix_key`:
+3. **
 
-```sh
-mkdir -p ~/.phoenix_key
-chmod 700 ~/.phoenix_key
-```
+3. **Place the phoenix_key File**:
+   ```sh
+   cp /path/to/phoenix_key ~/.phoenix_key/
+   ```
 
-3. **Place the `phoenix_key` File:**
-
-Copy your `phoenix_key` from the path found in the configuration file to the newly created directory:
-
-```sh
-cp /path/to/phoenix_key ~/.phoenix_key/
-```
-
-4. **Set Environment Variable for Phoenix Key Path:**
-
-Ensure that the `phoenix_key` path is set as an environment variable before starting `phoenixd`:
-
-```sh
-export PHOENIX_KEY_PATH=~/.phoenix_key/phoenix_key
-```
-
-### **Run phoenixd (Initial Test)**
-```sh
-./phoenixd
-```
-
-Check if phoenixd is running and accessible at [http://127.0.0.1:9740](http://127.0.0.1:9740).
+4. **Set Environment Variable for Phoenix Key Path**:
+   ```sh
+   export PHOENIX_KEY_PATH=~/.phoenix_key/phoenix_key
+   ```
 
 ## **4. Configure HTTPS and Reverse Proxy with Caddy**
 
@@ -125,7 +126,7 @@ sudo nano /etc/caddy/Caddyfile
 ```
 
 Add the following:
-```sh
+```caddyfile
 yourdomain.com {
   # Automatically get SSL certificates with HTTPS
   tls your-email@example.com
