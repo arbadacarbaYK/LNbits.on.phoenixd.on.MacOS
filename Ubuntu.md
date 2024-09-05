@@ -25,7 +25,9 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ### **Clone LNbits Repository**
 ```sh
-git clone https://github.com/lnbits/lnbits.git
+wget https://raw.githubusercontent.com/lnbits/lnbits/snapcraft/lnbits.sh
+chmod +x lnbits.sh
+./lnbits.sh
 cd lnbits
 ```
 
@@ -64,7 +66,11 @@ Check if LNbits is running at [http://127.0.0.1:5000](http://127.0.0.1:5000).
 2. **Download the appropriate binary for your system** (e.g., `phoenix-0.3.4-linux-x64.zip`).
 3. **Extract the downloaded file:**
    ```sh
-   unzip phoenix-0.3.4-linux-x64.zip -d phoenixd
+   wget https://github.com/ACINQ/phoenixd/releases/download/v0.3.4/phoenix-0.3.4-linunzip phoenix-0.3.4-linux-x64.zip -d phoenixdux-x64.zip
+   sudo apt install -y unzip
+   unzip phoenix-0.3.4-linux-x64.zip
+   chmod +x phoenix-0.3.4-linux-x64/phoenixd
+   ./phoenix-0.3.4-linux-x64/phoenixd
    cd phoenixd
    ```
 
