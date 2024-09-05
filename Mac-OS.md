@@ -35,7 +35,7 @@ cp .env.example .env
 nano .env
 ```
 
-Update `.env` with the following configuration:
+Update `.env` with:
 
 ```env
 LNBITS_DATA_FOLDER="./data"
@@ -86,7 +86,7 @@ Replace `<architecture>` with `x64` or `arm64` depending on your macOS hardware.
 `phoenixd` uses `phoenix_key` for key management. Ensure the keyring is set up correctly:
 
 1. **Retrieve the Phoenix Key:**
-   - The `phoenix_key` can be found by running the following command:
+   - The `phoenix_key` can be found by running:
    ```sh
    cat ~/.phoenix/phoenix.conf
    ```
@@ -123,7 +123,7 @@ sudo nano /usr/local/etc/Caddyfile
 
 Add the following to the Caddyfile:
 
-```sh
+```caddyfile
 yourdomain.com {
   # Automatically get SSL certificates with HTTPS
   tls your-email@example.com  # Use a valid email for Let's Encrypt
@@ -277,4 +277,4 @@ chmod +x ~/check_services.sh
 ~/check_services.sh
 ```
 
----
+--- 
