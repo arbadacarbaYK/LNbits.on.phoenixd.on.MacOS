@@ -1,4 +1,4 @@
-# **LNbits with Phoenixd on a Debian VPS**
+# **LNbits with Phoenixd on a Debian VPS (SQLite Version)**
 
 ## **1. Install Dependencies**
 
@@ -9,22 +9,8 @@ Ensure your system is up-to-date and install the necessary packages:
 ```sh
 sudo apt update
 sudo apt upgrade -y
-sudo apt install -y curl git python3-pip python3-venv postgresql postgresql-contrib unzip
+sudo apt install -y curl git python3-pip python3-venv unzip
 ```
-
-### **Install and Configure PostgreSQL**
-
-1. **Initialize and Start PostgreSQL**:
-   ```sh
-   sudo systemctl start postgresql
-   sudo systemctl enable postgresql
-   ```
-
-2. **Configure PostgreSQL User and Database**:
-   ```sh
-   sudo -u postgres psql -c "CREATE USER postgres WITH PASSWORD 'postgres';"
-   sudo -u postgres psql -c "CREATE DATABASE lnbits OWNER postgres;"
-   ```
 
 ### **Install Poetry**
 
@@ -67,20 +53,20 @@ nano .env
 Update the `.env` file with the following settings:
 
 ```env
-LNBITS_DATABASE_URL="postgres://postgres:postgres@localhost:5432/lnbits"
+LNBITS_DATA_FOLDER="./data"
+# LNBITS_DATABASE_URL="postgres://user:password@host:port/databasename"
 # Enable HTTPS support behind a proxy
 FORWARDED_ALLOW_IPS="*"
 PHOENIXD_API_ENDPOINT=http://127.0.0.1:9740/
 PHOENIXD_API_PASSWORD="your_phoenixd_key"
 ```
 
-### **Install Dependencies and Add `psycopg2-binary`**
+### **Install Dependencies**
 
-Use Poetry to install LNbits dependencies and add the necessary PostgreSQL binary:
+Use Poetry to install LNbits dependencies:
 
 ```sh
 poetry install
-poetry add psycopg2-binary
 ```
 
 ### **Run LNbits (Initial Test)**
@@ -240,7 +226,7 @@ Description=LNbits
 After=network.target
 
 [Service]
-ExecStart=/usr/local/bin/poetry run lnbits --port 5000 --host 0.0.0.0
+ExecStart=/home/youruser/.local/bin/poetry run lnbits --port 5000 --host 0.0.0.0
 WorkingDirectory=/path/to/lnbits
 Restart=always
 User=youruser
@@ -304,4 +290,4 @@ chmod +x ~/check_services.sh
 ~/check_services.sh
 ```
 
----
+--- 
