@@ -32,7 +32,7 @@ source ~/.bashrc
 
 ### **Clone LNbits Repository**
 
-Clone the LNbits repository from GitHub and navigate to its directory:
+Clone the LNbits repository and set it up:
 
 ```sh
 wget https://raw.githubusercontent.com/lnbits/lnbits/snapcraft/lnbits.sh
@@ -50,9 +50,14 @@ cp .env.example .env
 nano .env
 ```
 
-Update the `.env` file with the following settings:
+Update `.env` with:
 
 ```env
+# Database: to use SQLite, specify LNBITS_DATA_FOLDER
+#           to use PostgreSQL, specify LNBITS_DATABASE_URL=postgres://...
+#           to use CockroachDB, specify LNBITS_DATABASE_URL=cockroachdb://...
+# for both PostgreSQL and CockroachDB, you'll need to install
+#   psycopg2 as an additional dependency
 LNBITS_DATA_FOLDER="./data"
 # LNBITS_DATABASE_URL="postgres://user:password@host:port/databasename"
 # Enable HTTPS support behind a proxy
@@ -83,14 +88,15 @@ You should be able to access LNbits at [http://127.0.0.1:5000](http://127.0.0.1:
 
 ### **Download and Extract phoenixd Binary**
 
-1. **Navigate to the phoenixd release page** on GitHub: [phoenixd Releases](https://github.com/ACINQ/phoenixd/releases).
-
-2. **Download the appropriate binary for your system** (e.g., `phoenix-0.3.4-linux-x64.zip`).
-
-3. **Extract the downloaded file:**
+1. **Download the appropriate binary for your system**:
 
    ```sh
    wget https://github.com/ACINQ/phoenixd/releases/download/v0.3.4/phoenix-0.3.4-linux-x64.zip
+   ```
+
+2. **Extract the downloaded file**:
+
+   ```sh
    sudo apt install -y unzip
    unzip phoenix-0.3.4-linux-x64.zip
    chmod +x phoenix-0.3.4-linux-x64/phoenixd
@@ -290,4 +296,4 @@ chmod +x ~/check_services.sh
 ~/check_services.sh
 ```
 
---- 
+---
