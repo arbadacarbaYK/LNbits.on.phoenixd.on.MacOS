@@ -1,32 +1,33 @@
-# Setting up LNbits with `phoenixd` as a Funding Source on macOS
+# **Setting Up LNbits with `phoenixd` as a Funding Source on macOS**
 
-## 1. Install Dependencies
+## **1. Install Dependencies**
 
-### Install Homebrew
+### **Install Homebrew**
 ```sh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-### Install PostgreSQL
+### **Install Dependencies**
 ```sh
-brew install postgresql@14
-brew services start postgresql@14
+brew install python@3 unzip
 ```
 
-### Install Poetry
+### **Install Poetry**
 ```sh
 brew install poetry
 ```
 
-## 2. Set Up LNbits
+## **2. Set Up LNbits**
 
-### Clone LNbits Repository
+### **Download and Run LNbits Setup Script**
 ```sh
-git clone https://github.com/lnbits/lnbits.git
+wget https://raw.githubusercontent.com/lnbits/lnbits/snapcraft/lnbits.sh
+chmod +x lnbits.sh
+./lnbits.sh
 cd lnbits
 ```
 
-### Configure Environment
+### **Configure Environment**
 Copy the example environment file and modify it:
 
 ```sh
@@ -36,34 +37,35 @@ nano .env
 
 Update `.env` with the following configuration:
 
-```sh
-LNBITS_DATABASE_URL="postgres://postgres:postgres@localhost:5432/lnbits"
-LNBITS_BACKEND_WALLET_CLASS=PhoenixdWallet
-PHOENIXD_API_ENDPOINT=http://127.0.0.1:9740/
-PHOENIXD_API_PASSWORD="your_phoenixd_key"
-
+```env
+LNBITS_DATA_FOLDER="./data"
+# LNBITS_DATABASE_URL="postgres://user:password@host:port/databasename" (Commented out for SQLite)
 # Enable HTTPS support behind a proxy
 FORWARDED_ALLOW_IPS="*"
+PHOENIXD_API_ENDPOINT=http://127.0.0.1:9740/
+PHOENIXD_API_PASSWORD="your_phoenixd_key"
 ```
 
-Other configurations may also be necessary depending on your setup.
+### **Install Dependencies**
 
-### Install Dependencies and Add `psycopg2-binary`
+Since we're using SQLite, you don't need `psycopg2-binary`:
+
 ```sh
 poetry install
-poetry add psycopg2-binary
 ```
 
-### Run LNbits (Initial Test)
+### **Run LNbits (Initial Test)**
+Run LNbits to ensure it starts correctly:
+
 ```sh
 poetry run lnbits --port 5000 --host 0.0.0.0
 ```
 
-Check if LNbits is running at [http://127.0.0.1:5000](http://127.0.0.1:5000).
+You should be able to access LNbits at [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
-## 3. Set Up phoenixd Using Binaries
+## **3. Set Up phoenixd Using Binaries**
 
-### Download and Extract Phoenixd Binary
+### **Download and Extract Phoenixd Binary**
 
 Visit the [phoenixd releases page](https://github.com/ACINQ/phoenixd/releases) and download the appropriate binary for your macOS architecture:
 
@@ -79,9 +81,9 @@ cd phoenix-0.3.4-macos-<architecture>
 
 Replace `<architecture>` with `x64` or `arm64` depending on your macOS hardware.
 
-### Set Up Keyring for Phoenixd
+### **Set Up Keyring for Phoenixd**
 
-`phoenixd` uses `phoenix_key` for key management. The binary should already be configured to use a secure keyring, but ensure that the keyring is set up correctly:
+`phoenixd` uses `phoenix_key` for key management. Ensure the keyring is set up correctly:
 
 1. **Retrieve the Phoenix Key:**
    - The `phoenix_key` can be found by running the following command:
@@ -98,7 +100,7 @@ Replace `<architecture>` with `x64` or `arm64` depending on your macOS hardware.
 
    Ensure this path is secure and accessible only by the `phoenixd` process.
 
-### Run phoenixd (Initial Test)
+### **Run phoenixd (Initial Test)**
 Start `phoenixd` using the binary:
 
 ```sh
@@ -107,14 +109,14 @@ Start `phoenixd` using the binary:
 
 Check if `phoenixd` is running and accessible at [http://127.0.0.1:9740](http://127.0.0.1:9740).
 
-## 4. Configure HTTPS and Reverse Proxy with Caddy
+## **4. Configure HTTPS and Reverse Proxy with Caddy**
 
-### Install Caddy
+### **Install Caddy**
 ```sh
 brew install caddy
 ```
 
-### Create Caddyfile
+### **Create Caddyfile**
 ```sh
 sudo nano /usr/local/etc/Caddyfile
 ```
@@ -146,16 +148,16 @@ yourdomain.com {
 
 Replace `yourdomain.com` with your actual domain and ensure you have DNS configured to point to your server.
 
-### Start Caddy
+### **Start Caddy**
 ```sh
 sudo caddy start
 ```
 
 Check if your LNbits instance is accessible via HTTPS at `https://yourdomain.com`.
 
-## 5. Create LaunchAgents for macOS
+## **5. Create LaunchAgents for macOS**
 
-### Create phoenixd LaunchAgent
+### **Create phoenixd LaunchAgent**
 
 Create `~/Library/LaunchAgents/com.user.phoenixd.plist` with the following content:
 
@@ -180,13 +182,13 @@ Create `~/Library/LaunchAgents/com.user.phoenixd.plist` with the following conte
 
 Replace `<architecture>` with `x64` or `arm64` as needed.
 
-### Create LNbits LaunchAgent
+### **Create LNbits LaunchAgent**
 
 Create `~/Library/LaunchAgents/com.user.lnbits.plist` with the following content:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
@@ -216,16 +218,16 @@ Create `~/Library/LaunchAgents/com.user.lnbits.plist` with the following content
 </plist>
 ```
 
-### Load LaunchAgents
+### **Load LaunchAgents**
 
 ```sh
 launchctl load ~/Library/LaunchAgents/com.user.phoenixd.plist
 launchctl load ~/Library/LaunchAgents/com.user.lnbits.plist
 ```
 
-## 6. Verify Running Services
+## **6. Verify Running Services**
 
-### Create a Script to Check Running Services
+### **Create a Script to Check Running Services**
 
 Create a new script:
 
@@ -263,16 +265,16 @@ else
 fi
 ```
 
-### Make the Script Executable
+### **Make the Script Executable**
 
 ```sh
 chmod +x ~/check_services.sh
 ```
 
-### Run the Script
+### **Run the Script**
 
 ```sh
 ~/check_services.sh
 ```
 
---- 
+---
