@@ -2,7 +2,7 @@ s# Setting up LNbits with phoenixd on Ubuntu VPS (SQLite Version)
 
 ## **1. Install Dependencies**
 
-### **Update and Install System Packages**
+### **Update and install system packages**
 ```   
 sudo apt update
 sudo apt upgrade -y
@@ -53,7 +53,7 @@ PHOENIXD_API_ENDPOINT=http://127.0.0.1:9740/
 PHOENIXD_API_PASSWORD="your_phoenixd_key"
 ```
 
-### **Install Dependencies**
+### **Install dependencies**
 ```
 poetry install
 ```
@@ -65,9 +65,9 @@ poetry run lnbits --port 5000 --host 0.0.0.0
 
 Check if LNbits is running at [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
-## **3. Set Up phoenixd Using Pre-Built Binaries**
+## **3. Set up phoenixd using pre-built binaries**
 
-### **Download and Extract phoenixd Binary**
+### **Download and extract phoenixd Binary**
 
 1. **Download the appropriate binary for your system**:
    ```
@@ -110,7 +110,7 @@ Check if LNbits is running at [http://127.0.0.1:5000](http://127.0.0.1:5000).
    export PHOENIX_KEY_PATH=~/.phoenix_key/phoenix_key
    ```
 
-## **4. Configure HTTPS and Reverse Proxy with Caddy**
+## **4. Configure HTTPS and reverse proxy with Caddy**
 
 ### **Install Caddy**
 ```
@@ -156,9 +156,9 @@ sudo systemctl start caddy
 sudo systemctl enable caddy
 ```
 
-## **5. Create Systemd Service Files**
+## **5. Create systemd service files**
 
-### **Create phoenixd Service File**
+### **Create phoenixd service file**
 ```
 sudo nano /etc/systemd/system/phoenixd.service
 ```
@@ -182,7 +182,7 @@ WantedBy=multi-user.target
 
 Replace `/path/to/phoenixd` with the actual path where you extracted `phoenixd`, and `youruser` with your actual username.
 
-### **Create LNbits Service File**
+### **Create LNbits service file**
 ```
 sudo nano /etc/systemd/system/lnbits.service
 ```
@@ -204,7 +204,7 @@ Environment=PYTHONUNBUFFERED=1
 WantedBy=multi-user.target
 ```
 
-### **Reload Systemd and Start Services**
+### **Reload Systemd and start services**
 ```
 sudo systemctl daemon-reload
 sudo systemctl start phoenixd
@@ -213,9 +213,9 @@ sudo systemctl start lnbits
 sudo systemctl enable lnbits
 ```
 
-## **6. Verify Running Services**
+## **6. Verify/Monitor running Services**
 
-### **Create a Script to Check Running Services**
+### **Create a script to check running services**
 ```
 nano ~/check_services.sh
 ```
@@ -247,5 +247,46 @@ fi
 chmod +x ~/check_services.sh
 ~/check_services.sh
 ```
+
+## **7. Start-skript to start all services in the right order
+
+### **7. Create the script**
+```
+nano ~/start_services.sh
+```
+
+### **2. Add the following content**
+```
+#!/bin/bash
+
+# Start phoenixd first
+echo "Starting phoenixd..."
+sudo systemctl start phoenixd
+sleep 5  # Wait for phoenixd to fully start
+
+# Start Caddy next
+echo "Starting Caddy..."
+sudo systemctl start caddy
+sleep 5  # Wait for Caddy to fully start and set up HTTPS
+
+# Finally, start LNbits
+echo "Starting LNbits..."
+sudo systemctl start lnbits
+
+echo "All services started successfully in the correct order."
+```
+
+### **3. Make the script executable**
+```
+chmod +x ~/start_services.sh
+```
+
+### **4. Run the skript and start all services**
+```
+./start_services.sh
+```
+
+Adjust the `sleep` times if necessary to give more or less time for the services to start.
+
 
 ---
