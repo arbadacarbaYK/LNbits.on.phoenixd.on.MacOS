@@ -1,4 +1,4 @@
-s# Setting up LNbits with phoenixd on Ubuntu VPS (SQLite Version)
+# Setting up LNbits with phoenixd on Ubuntu VPS (SQLite Version)
 
 ## **1. Install Dependencies**
 
@@ -32,6 +32,9 @@ cd lnbits
 ```
 
 ### **Configure Environment**
+
+#### **For Both Services on the Same VPS**
+
 Copy the example environment file and edit it:
 ```
 cp .env.example .env
@@ -39,19 +42,27 @@ nano .env
 ```
 
 Update `.env` with:
-```
-# Database: to use SQLite, specify LNBITS_DATA_FOLDER
-#           to use PostgreSQL, specify LNBITS_DATABASE_URL=postgres://...
-#           to use CockroachDB, specify LNBITS_DATABASE_URL=cockroachdb://...
-# for both PostgreSQL and CockroachDB, you'll need to install
-#   psycopg2 as an additional dependency
+```dotenv
 LNBITS_DATA_FOLDER="./data"
+# Uncomment and adjust the line if using PostgreSQL or CockroachDB:
 # LNBITS_DATABASE_URL="postgres://user:password@host:port/databasename"
-# Enable HTTPS support behind a proxy
 FORWARDED_ALLOW_IPS="*"
 PHOENIXD_API_ENDPOINT=http://127.0.0.1:9740/
 PHOENIXD_API_PASSWORD="your_phoenixd_key"
 ```
+
+#### **For Separate Local `phoenixd`**
+
+If `phoenixd` is running on a different machine or IP address, update `.env` to:
+```dotenv
+LNBITS_DATA_FOLDER="./data"
+# Uncomment and adjust the line if using PostgreSQL or CockroachDB:
+# LNBITS_DATABASE_URL="postgres://user:password@host:port/databasename"
+FORWARDED_ALLOW_IPS="*"
+PHOENIXD_API_ENDPOINT=http://<phoenixd-ip>:9740/
+PHOENIXD_API_PASSWORD="your_phoenixd_key"
+```
+Replace `<phoenixd-ip>` with the actual IP address or hostname of the machine running `phoenixd`.
 
 ### **Install dependencies**
 ```
@@ -248,7 +259,7 @@ chmod +x ~/check_services.sh
 ~/check_services.sh
 ```
 
-## **7. Start-skript to start all services in the right order
+## **7. Start-skript to start all services in the right order**
 
 ### **7. Create the script**
 ```
@@ -281,12 +292,11 @@ echo "All services started successfully in the correct order."
 chmod +x ~/start_services.sh
 ```
 
-### **4. Run the skript and start all services**
+### **4. Run the script and start all services**
 ```
 ./start_services.sh
 ```
 
 Adjust the `sleep` times if necessary to give more or less time for the services to start.
-
 
 ---
