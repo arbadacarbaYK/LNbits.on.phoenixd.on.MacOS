@@ -1,7 +1,12 @@
 This repo lists guides on how to install LNbits on a phoenixd node on different VPS operating systems.
 
-![image](https://github.com/user-attachments/assets/f7a64b23-52d5-4313-b1d5-19085f83c2c9)
+You will find two scenarios described
 
+## LNbits and Phoenixd on the Same Local Machine
+<img src="https://github.com/user-attachments/assets/d0c88003-1480-4672-a1cf-0811eeff38ed" width="350" />
+
+## Phoenixd Locally and LNbits/Caddy on an External VPS
+<img src="https://github.com/user-attachments/assets/8f7f4d6e-449d-43e4-81fe-b2aea88ab065" width="350" />
 
 
 # Ready Installing ?
