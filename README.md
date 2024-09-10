@@ -1,4 +1,4 @@
-This repo lists guides on how to install LNbits on a phoenixd node on different VPS operating systems.
+This repo lists guides on how to install LNbits on a phoenixd node 
 
 You will find two scenarios described
 
