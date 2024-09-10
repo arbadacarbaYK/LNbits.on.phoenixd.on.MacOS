@@ -1,40 +1,32 @@
-# **LNbits with Phoenixd on a Debian VPS (SQLite Version)**
+# **Setting up LNbits with phoenixd on Debian VPS (SQLite Version)**
 
 ## **1. Install Dependencies**
 
-### **Update and Install System Packages**
-
-Ensure your system is up-to-date and install the necessary packages:
-
-```sh
+### **Update and install system packages**
+```   
 sudo apt update
 sudo apt upgrade -y
 sudo apt install -y curl git python3-pip python3-venv unzip
 ```
 
 ### **Install Poetry**
-
-Install Poetry for managing Python dependencies:
-
-```sh
+```
 curl -sSL https://install.python-poetry.org | python3 -
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
 Add the Poetry path to your shell profile:
-
-```sh
+```
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
+---
+
 ## **2. Set Up LNbits**
 
-### **Clone LNbits Repository**
-
-Clone the LNbits repository and set it up:
-
-```sh
+### **Download and Set Up LNbits**
+```
 wget https://raw.githubusercontent.com/lnbits/lnbits/snapcraft/lnbits.sh
 chmod +x lnbits.sh
 ./lnbits.sh
@@ -42,83 +34,94 @@ cd lnbits
 ```
 
 ### **Configure Environment**
-
 Copy the example environment file and edit it:
-
-```sh
+```
 cp .env.example .env
 nano .env
 ```
 
 Update `.env` with:
-
 ```env
 # Database: to use SQLite, specify LNBITS_DATA_FOLDER
-#           to use PostgreSQL, specify LNBITS_DATABASE_URL=postgres://...
-#           to use CockroachDB, specify LNBITS_DATABASE_URL=cockroachdb://...
-# for both PostgreSQL and CockroachDB, you'll need to install
-#   psycopg2 as an additional dependency
 LNBITS_DATA_FOLDER="./data"
-# LNBITS_DATABASE_URL="postgres://user:password@host:port/databasename"
-# Enable HTTPS support behind a proxy
 FORWARDED_ALLOW_IPS="*"
 PHOENIXD_API_ENDPOINT=http://127.0.0.1:9740/
 PHOENIXD_API_PASSWORD="your_phoenixd_key"
 ```
 
-### **Install Dependencies**
-
-Use Poetry to install LNbits dependencies:
-
-```sh
+### **Install dependencies**
+```
 poetry install
 ```
 
 ### **Run LNbits (Initial Test)**
-
-Run LNbits to ensure it starts correctly:
-
-```sh
+```
 poetry run lnbits --port 5000 --host 0.0.0.0
 ```
 
-You should be able to access LNbits at [http://127.0.0.1:5000](http://127.0.0.1:5000).
+Check if LNbits is running at [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
-## **3. Set Up phoenixd Using Pre-Built Binaries**
+---
 
-### **Download and Extract phoenixd Binary**
+## **3. Set up phoenixd using pre-built binaries**
+
+### **Download and extract phoenixd Binary**
 
 1. **Download the appropriate binary for your system**:
-
-   ```sh
+   ```bash
    wget https://github.com/ACINQ/phoenixd/releases/download/v0.3.4/phoenix-0.3.4-linux-x64.zip
    ```
 
 2. **Extract the downloaded file**:
-
-   ```sh
+   ```bash
    sudo apt install -y unzip
    unzip phoenix-0.3.4-linux-x64.zip
    chmod +x phoenix-0.3.4-linux-x64/phoenixd
-   ./phoenix-0.3.4-linux-x64/phoenixd
-   cd phoenixd
    ```
 
-### **Run phoenixd (Initial Test)**
+3. **Run phoenixd**:
+   ```bash
+   ./phoenix-0.3.4-linux-x64/phoenixd
+   ```
 
-Run phoenixd to ensure it starts correctly:
+---
 
-```sh
-./phoenixd
+### **Set up Keyring for Phoenixd**
+
+1. **Find the Phoenix Key**:
+   ```bash
+   cat ~/.phoenix/phoenix.conf
+   ```
+   - Copy the `phoenix_key` from this file.
+
+2. **Secure the Keyring Directory**:
+   ```bash
+   mkdir -p ~/.phoenix_key
+   chmod 700 ~/.phoenix_key
+   ```
+
+3. **Place the phoenix_key File**:
+   ```bash
+   nano ~/.phoenix_key/phoenix_key
+   ```
+   - Paste the copied `phoenix_key` and save.
+
+4. **Set Environment Variable for Phoenix Key Path**:
+   ```bash
+   export PHOENIX_KEY_PATH=~/.phoenix_key/phoenix_key
+   ```
+
+Update the `.env` file in your LNbits configuration:
+```env
+PHOENIX_KEY_PATH=~/.phoenix_key/phoenix_key
 ```
 
-## **4. Configure HTTPS and Reverse Proxy with Caddy**
+---
+
+## **4. Configure HTTPS and reverse proxy with Caddy**
 
 ### **Install Caddy**
-
-Install Caddy using the following commands:
-
-```sh
+```bash
 sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
@@ -127,15 +130,11 @@ sudo apt install caddy
 ```
 
 ### **Create Caddyfile**
-
-Create and edit the Caddyfile:
-
-```sh
+```bash
 sudo nano /etc/caddy/Caddyfile
 ```
 
-Add the following configuration:
-
+Add the following:
 ```caddyfile
 yourdomain.com {
   # Automatically get SSL certificates with HTTPS
@@ -160,96 +159,61 @@ yourdomain.com {
 ```
 
 ### **Start Caddy**
-
-Enable and start the Caddy service:
-
-```sh
+```bash
 sudo systemctl start caddy
 sudo systemctl enable caddy
 ```
 
-## **5. Configure phoenixd Key Management**
+---
 
-Ensure you manage the `phoenixd` keys correctly:
+## **5. Create systemd service files**
 
-1. **Generate a New Key Pair**:
-
-   Use `phoenixd` to generate a new key pair:
-
-   ```sh
-   ./phoenixd --generate-keys
-   ```
-
-   This command will output a new public/private key pair. Save these keys securely, as they will be required for LNbits and phoenixd to communicate securely.
-
-2. **Store Keys Securely**:
-
-   Place the keys in a secure directory accessible to `phoenixd`. Update your LNbits configuration to use these keys.
-
-   Update `.env` in the LNbits configuration directory with:
-
-   ```env
-   PHOENIXD_PRIVATE_KEY="/path/to/phoenixd_private.key"
-   PHOENIXD_PUBLIC_KEY="/path/to/phoenixd_public.key"
-   ```
-
-## **6. Create Systemd Service Files**
-
-### **Create phoenixd Service File**
-
-Create a systemd service file for phoenixd:
-
-```sh
+### **Create phoenixd service file**
+```bash
 sudo nano /etc/systemd/system/phoenixd.service
 ```
 
 Add the following content:
-
 ```ini
 [Unit]
 Description=phoenixd
 After=network.target
 
 [Service]
-ExecStart=/path/to/phoenixd/phoenixd --private-key /path/to/phoenixd_private.key
+ExecStart=/path/to/phoenixd/phoenixd
 Restart=always
 User=youruser
+Environment=PHOENIX_KEY_PATH=/home/youruser/.phoenix_key/phoenix_key
+WorkingDirectory=/path/to/phoenixd
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-### **Create LNbits Service File**
-
-Create a systemd service file for LNbits:
-
-```sh
+### **Create LNbits service file**
+```bash
 sudo nano /etc/systemd/system/lnbits.service
 ```
 
 Add the following content:
-
 ```ini
 [Unit]
 Description=LNbits
 After=network.target
 
 [Service]
-ExecStart=/home/youruser/.local/bin/poetry run lnbits --port 5000 --host 0.0.0.0
-WorkingDirectory=/path/to/lnbits
+ExecStart=/home/lnbits/.local/bin/poetry run lnbits --port 5000 --host 0.0.0.0
+WorkingDirectory=/home/lnbits/lnbits
 Restart=always
-User=youruser
+User=lnbits
 Environment=PYTHONUNBUFFERED=1
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-### **Reload Systemd and Start Services**
-
-Reload systemd and enable the services:
-
-```sh
+### **Reload Systemd and start services**
+```bash
 sudo systemctl daemon-reload
 sudo systemctl start phoenixd
 sudo systemctl enable phoenixd
@@ -257,19 +221,17 @@ sudo systemctl start lnbits
 sudo systemctl enable lnbits
 ```
 
-## **7. Verify Running Services**
+---
 
-### **Create a Script to Check Running Services**
+## **6. Verify/Monitor running Services**
 
-Create a script to check if the services are running:
-
-```sh
+### **Create a script to check running services**
+```bash
 nano ~/check_services.sh
 ```
 
 Add the following content:
-
-```sh
+```bash
 #!/bin/bash
 if systemctl is-active --quiet phoenixd; then
     echo "phoenixd is running."
@@ -291,12 +253,49 @@ fi
 ```
 
 ### **Make the Script Executable and Run It**
-
-Make the script executable and run it to verify the services:
-
-```sh
+```bash
 chmod +x ~/check_services.sh
 ~/check_services.sh
+```
+
+---
+
+## **7. Start script to start all services in the right order**
+
+### **Create the start_services script**
+```bash
+nano ~/start_services.sh
+```
+
+### **Add the following content**
+```bash
+#!/bin/bash
+
+# Start phoenixd first
+echo "Starting phoenixd..."
+sudo systemctl start phoenixd
+sleep 5  # Wait for phoenixd to fully start
+
+# Start Caddy next
+echo "Starting Caddy..."
+sudo systemctl start caddy
+sleep 5  # Wait for Caddy to fully start and set up HTTPS
+
+# Finally, start LNbits
+echo "Starting LNbits..."
+sudo systemctl start lnbits
+
+echo "All services started successfully in the correct order."
+```
+
+### **Make the script executable**
+```bash
+chmod +x ~/start_services.sh
+```
+
+### **Run the script to start all services**
+```bash
+./start_services.sh
 ```
 
 ---
