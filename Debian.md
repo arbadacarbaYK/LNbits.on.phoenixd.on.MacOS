@@ -1,4 +1,4 @@
-# **Setting up LNbits with phoenixd on Debian VPS (SQLite Version)**
+# Setting up LNbits with phoenixd on Debian VPS (SQLite Version)
 
 ## **1. Install Dependencies**
 
@@ -21,8 +21,6 @@ echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
----
-
 ## **2. Set Up LNbits**
 
 ### **Download and Set Up LNbits**
@@ -34,6 +32,9 @@ cd lnbits
 ```
 
 ### **Configure Environment**
+
+#### **For Both Services on the Same VPS**
+
 Copy the example environment file and edit it:
 ```
 cp .env.example .env
@@ -41,13 +42,27 @@ nano .env
 ```
 
 Update `.env` with:
-```env
-# Database: to use SQLite, specify LNBITS_DATA_FOLDER
+```dotenv
 LNBITS_DATA_FOLDER="./data"
+# Uncomment and adjust the line if using PostgreSQL or CockroachDB:
+# LNBITS_DATABASE_URL="postgres://user:password@host:port/databasename"
 FORWARDED_ALLOW_IPS="*"
 PHOENIXD_API_ENDPOINT=http://127.0.0.1:9740/
 PHOENIXD_API_PASSWORD="your_phoenixd_key"
 ```
+
+#### **For Separate Local `phoenixd`**
+
+If `phoenixd` is running on a different machine or IP address, update `.env` to:
+```dotenv
+LNBITS_DATA_FOLDER="./data"
+# Uncomment and adjust the line if using PostgreSQL or CockroachDB:
+# LNBITS_DATABASE_URL="postgres://user:password@host:port/databasename"
+FORWARDED_ALLOW_IPS="*"
+PHOENIXD_API_ENDPOINT=http://<phoenixd-ip>:9740/
+PHOENIXD_API_PASSWORD="your_phoenixd_key"
+```
+Replace `<phoenixd-ip>` with the actual IP address or hostname of the machine running `phoenixd`.
 
 ### **Install dependencies**
 ```
@@ -61,67 +76,55 @@ poetry run lnbits --port 5000 --host 0.0.0.0
 
 Check if LNbits is running at [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
----
-
 ## **3. Set up phoenixd using pre-built binaries**
 
 ### **Download and extract phoenixd Binary**
 
 1. **Download the appropriate binary for your system**:
-   ```bash
+   ```
    wget https://github.com/ACINQ/phoenixd/releases/download/v0.3.4/phoenix-0.3.4-linux-x64.zip
    ```
 
 2. **Extract the downloaded file**:
-   ```bash
+   ```
    sudo apt install -y unzip
    unzip phoenix-0.3.4-linux-x64.zip
    chmod +x phoenix-0.3.4-linux-x64/phoenixd
    ```
 
 3. **Run phoenixd**:
-   ```bash
+   ```
    ./phoenix-0.3.4-linux-x64/phoenixd
    ```
-
----
 
 ### **Set up Keyring for Phoenixd**
 
 1. **Find the Phoenix Key**:
-   ```bash
+   ```
    cat ~/.phoenix/phoenix.conf
    ```
-   - Copy the `phoenix_key` from this file.
+   - This file contains the path to your Phoenix key.
 
 2. **Secure the Keyring Directory**:
-   ```bash
+   ```
    mkdir -p ~/.phoenix_key
    chmod 700 ~/.phoenix_key
    ```
 
 3. **Place the phoenix_key File**:
-   ```bash
-   nano ~/.phoenix_key/phoenix_key
    ```
-   - Paste the copied `phoenix_key` and save.
+   cp /path/to/phoenix_key ~/.phoenix_key/
+   ```
 
 4. **Set Environment Variable for Phoenix Key Path**:
-   ```bash
+   ```
    export PHOENIX_KEY_PATH=~/.phoenix_key/phoenix_key
    ```
-
-Update the `.env` file in your LNbits configuration:
-```env
-PHOENIX_KEY_PATH=~/.phoenix_key/phoenix_key
-```
-
----
 
 ## **4. Configure HTTPS and reverse proxy with Caddy**
 
 ### **Install Caddy**
-```bash
+```
 sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
@@ -130,12 +133,12 @@ sudo apt install caddy
 ```
 
 ### **Create Caddyfile**
-```bash
+```
 sudo nano /etc/caddy/Caddyfile
 ```
 
 Add the following:
-```caddyfile
+```
 yourdomain.com {
   # Automatically get SSL certificates with HTTPS
   tls your-email@example.com
@@ -159,22 +162,20 @@ yourdomain.com {
 ```
 
 ### **Start Caddy**
-```bash
+```
 sudo systemctl start caddy
 sudo systemctl enable caddy
 ```
 
----
-
 ## **5. Create systemd service files**
 
 ### **Create phoenixd service file**
-```bash
+```
 sudo nano /etc/systemd/system/phoenixd.service
 ```
 
 Add the following content:
-```ini
+```
 [Unit]
 Description=phoenixd
 After=network.target
@@ -190,22 +191,24 @@ WorkingDirectory=/path/to/phoenixd
 WantedBy=multi-user.target
 ```
 
+Replace `/path/to/phoenixd` with the actual path where you extracted `phoenixd`, and `youruser` with your actual username.
+
 ### **Create LNbits service file**
-```bash
+```
 sudo nano /etc/systemd/system/lnbits.service
 ```
 
 Add the following content:
-```ini
+```
 [Unit]
 Description=LNbits
 After=network.target
 
 [Service]
-ExecStart=/home/lnbits/.local/bin/poetry run lnbits --port 5000 --host 0.0.0.0
-WorkingDirectory=/home/lnbits/lnbits
+ExecStart=/home/youruser/.local/bin/poetry run lnbits --port 5000 --host 0.0.0.0
+WorkingDirectory=/path/to/lnbits
 Restart=always
-User=lnbits
+User=youruser
 Environment=PYTHONUNBUFFERED=1
 
 [Install]
@@ -213,7 +216,7 @@ WantedBy=multi-user.target
 ```
 
 ### **Reload Systemd and start services**
-```bash
+```
 sudo systemctl daemon-reload
 sudo systemctl start phoenixd
 sudo systemctl enable phoenixd
@@ -221,17 +224,15 @@ sudo systemctl start lnbits
 sudo systemctl enable lnbits
 ```
 
----
-
 ## **6. Verify/Monitor running Services**
 
 ### **Create a script to check running services**
-```bash
+```
 nano ~/check_services.sh
 ```
 
 Add the following content:
-```bash
+```
 #!/bin/bash
 if systemctl is-active --quiet phoenixd; then
     echo "phoenixd is running."
@@ -253,22 +254,20 @@ fi
 ```
 
 ### **Make the Script Executable and Run It**
-```bash
+```
 chmod +x ~/check_services.sh
 ~/check_services.sh
 ```
 
----
+## **7. Start-skript to start all services in the right order**
 
-## **7. Start script to start all services in the right order**
-
-### **Create the start_services script**
-```bash
+### **Create the script**
+```
 nano ~/start_services.sh
 ```
 
 ### **Add the following content**
-```bash
+```
 #!/bin/bash
 
 # Start phoenixd first
@@ -289,13 +288,15 @@ echo "All services started successfully in the correct order."
 ```
 
 ### **Make the script executable**
-```bash
+```
 chmod +x ~/start_services.sh
 ```
 
-### **Run the script to start all services**
-```bash
+### **Run the script and start all services**
+```
 ./start_services.sh
 ```
+
+Adjust the `sleep` times if necessary to give more or less time for the services to start.
 
 ---
