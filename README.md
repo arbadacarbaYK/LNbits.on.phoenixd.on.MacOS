@@ -1,6 +1,7 @@
 This repo lists guides on how to install LNbits on a phoenixd node on different VPS operating systems.
 
-<img src="https://github.com/user-attachments/assets/39afc112-8a55-4431-889f-895f54ea1de8" width="400"/>
+![image](https://github.com/user-attachments/assets/f7a64b23-52d5-4313-b1d5-19085f83c2c9)
+
 
 
 # Ready Installing ?
