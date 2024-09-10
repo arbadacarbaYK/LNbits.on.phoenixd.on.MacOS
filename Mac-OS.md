@@ -1,115 +1,50 @@
-# **Setting Up LNbits with `phoenixd` on iOS and VPS**
+# **Setting Up LNbits with `phoenixd` on iOS**
 
-## **On iOS (Running `phoenixd`)**
+You’ll find two scenarios covered:
 
-### **1. Set Up `phoenixd`**
+- phoenixd running locally on iOS but LNbits/Caddy on an external Debian VPS
+- phoenixd, LNbits, and Caddy running locally on iOS
 
-#### **Download and Extract `phoenixd` Binary**
+You’ll find two scenarios covered:
+- `phoenixd` running on iOS but `LNbits`/`Caddy` on an external Debian VPS
+- `phoenixd`, `LNbits`, and `Caddy` running locally with `phoenixd` on iOS
 
-1. Visit the [phoenixd releases page](https://github.com/ACINQ/phoenixd/releases) and download the appropriate binary for macOS (x64 or arm64).
-   
-   - **For macOS x64:** `phoenix-0.3.4-macos-x64.zip`
-   - **For macOS arm64:** `phoenix-0.3.4-macos-arm64.zip`
+## **1. Install Dependencies (Local Debian VPS)**
 
-2. Extract the binary:
-
-   ```sh
-   unzip phoenix-0.3.4-macos-<architecture>.zip
-   cd phoenix-0.3.4-macos-<architecture>
-   ```
-
-   Replace `<architecture>` with `x64` or `arm64` based on your macOS hardware.
-
-#### **Set Up Keyring for `phoenixd`**
-
-1. **Retrieve the Phoenix Key:**
-
-   ```sh
-   cat ~/.phoenix/phoenix.conf
-   ```
-
-   This file contains the path to your Phoenix key.
-
-2. **Create Keyring Directory:**
-
-   ```sh
-   mkdir -p ~/.phoenix_key
-   chmod 700 ~/.phoenix_key
-   ```
-
-3. **Copy the Phoenix Key File:**
-
-   ```sh
-   cp /path/to/phoenix_key ~/.phoenix_key/
-   ```
-
-4. **Set Environment Variable:**
-
-   ```sh
-   export PHOENIX_KEY_PATH=~/.phoenix_key/phoenix_key
-   ```
-
-   Ensure this environment variable is available in your shell or application environment.
-
-#### **Run `phoenixd`**
-
-Start `phoenixd` using the binary:
-
-```sh
-./phoenixd
+### **Update and Install System Packages**
 ```
-
-Ensure `phoenixd` is running and accessible at [http://127.0.0.1:9740](http://127.0.0.1:9740).
-
-## **On VPS (Running LNbits and Caddy)**
-
-### **1. Install Dependencies**
-
-#### **Update and Install System Packages**
-
-```sh
 sudo apt update
 sudo apt upgrade -y
 sudo apt install -y curl git python3-pip python3-venv unzip
 ```
 
-#### **Install Poetry**
-
-```sh
+### **Install Poetry**
+```
 curl -sSL https://install.python-poetry.org | python3 -
 export PATH="$HOME/.local/bin:$PATH"
 ```
-
 Add the Poetry path to your shell profile:
-
-```sh
+```
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-### **2. Set Up LNbits**
+## **2. Set Up LNbits**
 
-#### **Download and Set Up LNbits**
-
-```sh
+### **Download and Set Up LNbits**
+```
 wget https://raw.githubusercontent.com/lnbits/lnbits/snapcraft/lnbits.sh
 chmod +x lnbits.sh
 ./lnbits.sh
 cd lnbits
 ```
 
-#### **Configure Environment**
+### **Configure Environment**
 
-Copy the example environment file and modify it:
+#### **Scenario 1: `phoenixd` on iOS, `LNbits` and Caddy on External Debian VPS**
 
-```sh
-cp .env.example .env
-nano .env
+On your Debian VPS (where `LNbits` and `Caddy` are running), ensure the following in `.env`:
 ```
-
-Update `.env` with:
-
-```dotenv
 LNBITS_DATA_FOLDER="./data"
 # Uncomment and adjust the line if using PostgreSQL or CockroachDB:
 # LNBITS_DATABASE_URL="postgres://user:password@host:port/databasename"
@@ -117,28 +52,28 @@ FORWARDED_ALLOW_IPS="*"
 PHOENIXD_API_ENDPOINT=http://<ios-device-ip>:9740/
 PHOENIXD_API_PASSWORD="your_phoenixd_key"
 ```
+Replace `<ios-device-ip>` with the IP address or hostname of your iOS device running `phoenixd`.
 
-Replace `<ios-device-ip>` with the IP address of your iOS device running `phoenixd`.
+#### **Scenario 2: `phoenixd`, `LNbits`, and Caddy Locally with `phoenixd` on iOS**
 
-#### **Install Dependencies**
-
-```sh
-poetry install
+If you run `LNbits` and `Caddy` locally on Debian and `phoenixd` on iOS:
+```
+LNBITS_DATA_FOLDER="./data"
+# Uncomment and adjust the line if using PostgreSQL or CockroachDB:
+# LNBITS_DATABASE_URL="postgres://user:password@host:port/databasename"
+FORWARDED_ALLOW_IPS="*"
+PHOENIXD_API_ENDPOINT=http://127.0.0.1:9740/
+PHOENIXD_API_PASSWORD="your_phoenixd_key"
 ```
 
-#### **Run LNbits (Initial Test)**
+## **3. Set Up phoenixd Using Pre-built Binaries**
 
-```sh
-poetry run lnbits --port 5000 --host 0.0.0.0
+Since `phoenixd` is running on iOS, no installation is required on Debian. Ensure `phoenixd` is accessible via the network from the Debian VPS.
+
+## **4. Configure HTTPS and Reverse Proxy with Caddy**
+
+### **Install Caddy**
 ```
-
-Check if LNbits is running at [http://127.0.0.1:5000](http://127.0.0.1:5000).
-
-### **3. Set Up Caddy**
-
-#### **Install Caddy**
-
-```sh
 sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
@@ -146,20 +81,45 @@ sudo apt update
 sudo apt install caddy
 ```
 
-#### **Create Caddyfile**
+### **Create Caddyfile**
 
-```sh
+#### **Scenario 1: `phoenixd` on iOS, `LNbits` and Caddy on External Debian VPS**
+```
 sudo nano /etc/caddy/Caddyfile
 ```
-
-Add the following content:
-
-```caddyfile
+Add:
+```
 yourdomain.com {
-  # Automatically get SSL certificates with HTTPS
   tls your-email@example.com
-  
-  # Handle Server-Sent Events (SSE) for payments
+
+  handle /api/v1/payments/sse* {
+    reverse_proxy <ios-device-ip>:5000 {
+      header_up X-Forwarded-Host {host}
+      transport http {
+        keepalive off
+        compression off
+      }
+    }
+  }
+
+  reverse_proxy <ios-device-ip>:5000 {
+    header_up X-Forwarded-Host {host}
+  }
+}
+```
+Replace `<ios-device-ip>` with the IP address of your iOS device running `phoenixd`.
+
+#### **Scenario 2: `phoenixd`, `LNbits`, and Caddy Locally**
+
+On the local Debian machine:
+```
+sudo nano /etc/caddy/Caddyfile
+```
+Add:
+```
+yourdomain.com {
+  tls your-email@example.com
+
   handle /api/v1/payments/sse* {
     reverse_proxy 127.0.0.1:5000 {
       header_up X-Forwarded-Host {host}
@@ -170,102 +130,79 @@ yourdomain.com {
     }
   }
 
-  # Reverse proxy for LNbits
   reverse_proxy 127.0.0.1:5000 {
     header_up X-Forwarded-Host {host}
   }
 }
 ```
 
-Replace `yourdomain.com` with your actual domain and ensure DNS is configured.
-
-#### **Start Caddy**
-
-```sh
+### **Start Caddy**
+```
 sudo systemctl start caddy
 sudo systemctl enable caddy
 ```
 
-### **4. Create Systemd Service Files**
+## **5. Create Systemd Service Files**
 
-#### **Create `phoenixd` Service File**
-
-```sh
-sudo nano /etc/systemd/system/phoenixd.service
+### **Create LNbits Service File**
 ```
-
-Add the following content:
-
-```ini
-[Unit]
-Description=phoenixd
-After=network.target
-
-[Service]
-ExecStart=/path/to/phoenixd/phoenixd
-Restart=always
-User=youruser
-Environment=PHOENIX_KEY_PATH=/home/youruser/.phoenix_key/phoenix_key
-WorkingDirectory=/path/to/phoenixd
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Replace `/path/to/phoenixd` with the path where you extracted `phoenixd` and `youruser` with your username.
-
-#### **Create LNbits Service File**
-
-```sh
 sudo nano /etc/systemd/system/lnbits.service
 ```
-
-Add the following content:
-
-```ini
+Add:
+```
 [Unit]
 Description=LNbits
-After=network.target
 
 [Service]
-ExecStart=/home/youruser/.local/bin/poetry run lnbits --port 5000 --host 0.0.0.0
-WorkingDirectory=/path/to/lnbits
+WorkingDirectory=/home/lnbits/lnbits
+ExecStart=/home/lnbits/.local/bin/poetry run lnbits
+User=lnbits
 Restart=always
-User=youruser
+TimeoutSec=120
+RestartSec=30
 Environment=PYTHONUNBUFFERED=1
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-### **5. Reload Systemd and Start Services**
-
-```sh
+### **Reload Systemd and Start Services**
+```
 sudo systemctl daemon-reload
-sudo systemctl start phoenixd
-sudo systemctl enable phoenixd
 sudo systemctl start lnbits
 sudo systemctl enable lnbits
 ```
 
-### **6. Verify Running Services**
+## **6. Firewall Configuration**
 
-#### **Create a Script to Check Running Services**
+### **Scenario 1: `phoenixd` on iOS, `LNbits` and Caddy on External Debian VPS**
 
-```sh
-nano ~/check_services.sh
+On the Debian VPS (where `LNbits` and `Caddy` are running):
+```
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable
 ```
 
-Add the following content:
+### **Scenario 2: `phoenixd`, `LNbits`, and Caddy Locally with `phoenixd` on iOS**
 
-```sh
+For local firewall settings, allow necessary ports:
+```
+sudo ufw allow 5000/tcp
+sudo ufw enable
+```
+
+## **7. Verify/Monitor Running Services**
+
+### **Create a Script to Check Running Services**
+
+#### **Scenario 1: `phoenixd` on iOS, `LNbits`, and Caddy on External Debian VPS**
+```
+nano ~/check_services.sh
+```
+Add:
+```
 #!/bin/bash
-if systemctl is-active --quiet phoenixd; then
-    echo "phoenixd is running."
-else
-    echo "phoenixd is not running."
-fi
-
 if systemctl is-active --quiet lnbits; then
     echo "LNbits is running."
 else
@@ -279,70 +216,48 @@ else
 fi
 ```
 
-#### **Make the Script Executable and Run It**
+#### **Scenario 2: `phoenixd`, `LNbits`, and Caddy Locally with `phoenixd` on iOS**
 
-```sh
-chmod +x ~/check_services.sh
-~/check_services.sh
+On the local machine:
+```
+systemctl is-active --quiet lnbits && echo "LNbits is running." || echo "LNbits is not running."
+systemctl is-active --quiet caddy && echo "Caddy is running." || echo "Caddy is not running."
 ```
 
-### **Firewall Considerations**
+## **8. Start Script to Start All Services**
 
-#### **On the VPS**
+### **Scenario 1: `phoenixd` on iOS, `LNbits`, and Caddy on External Debian VPS**
 
-1. **Allow Traffic for LNbits and Caddy**
+On the Debian VPS:
+```
+nano ~/start_services_vps.sh
+```
+Add:
+```
+#!/bin/bash
+echo "Starting LNbits..."
+sudo systemctl start lnbits
+sleep 5
 
-   ```sh
-   sudo ufw allow 5000/tcp
-   sudo ufw allow 80/tcp
-   sudo ufw allow 443/tcp
-   ```
+echo "Starting Caddy..."
+sudo systemctl start caddy
+```
 
-2. **Allow Incoming Traffic from iOS Device**
+### **Scenario 2: `phoenixd`, `LNbits`, and Caddy Locally with `phoenixd` on iOS**
 
-   ```sh
-   sudo ufw allow from <ios-device-ip> to any port 9740
-   ```
+On the local machine:
+```
+nano ~/start_services_local.sh
+```
+Add:
+```
+#!/bin/bash
+echo "Starting LNbits..."
+sudo systemctl start lnbits
+sleep 5
 
-   Replace `<ios-device-ip>` with the IP address of your iOS device.
-
-3. **Verify Firewall Rules**
-
-   ```sh
-   sudo ufw status
-   ```
-
-#### **On iOS**
-
-1. **Network Configuration**
-
-   Ensure your iOS device is on a network that allows outbound connections to the VPS on port 9740.
-
-2. **VPNs or Security Apps**
-
-   If using a VPN or security apps on iOS, ensure they are configured to allow connections to your VPS.
-
-### **Testing Connectivity**
-
-1. **From VPS to iOS Device**
-
-   ```sh
-   curl http://<ios-device-ip>:9740/
-   ```
-
-   or
-
-   ```sh
-   telnet <ios-device-ip> 9740
-   ```
-
-2. **From iOS Device to VPS**
-
-   ```sh
-   curl http://<vps-domain-or-ip>:5000/
-   ```
-
-Adjust firewall settings as needed based on your network configuration and security requirements.
+echo "Starting Caddy..."
+sudo systemctl start caddy
+```
 
 ---
-
