@@ -1,7 +1,7 @@
 # **Setting Up LNbits with `phoenixd`**
 
 Youll find two scenarios covered
-- Phoenixd running locally but LNbits/Caddy on an external VPS
+- Phoenixd running locally but LNbits/Caddy on an external Ubuntu VPS
 - Phoenixd, LNbits and Caddy running locally
 
 
