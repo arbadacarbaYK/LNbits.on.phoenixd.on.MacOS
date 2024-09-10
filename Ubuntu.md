@@ -1,9 +1,9 @@
-# Setting up LNbits with phoenixd on Ubuntu VPS (SQLite Version)
+# **Setting Up LNbits with `phoenixd` on Ubuntu VPS (SQLite Version)**
 
 ## **1. Install Dependencies**
 
-### **Update and install system packages**
-```   
+### **Update and Install System Packages**
+```
 sudo apt update
 sudo apt upgrade -y
 sudo apt install -y curl git python3-pip python3-venv unzip
@@ -42,7 +42,7 @@ nano .env
 ```
 
 Update `.env` with:
-```dotenv
+```
 LNBITS_DATA_FOLDER="./data"
 # Uncomment and adjust the line if using PostgreSQL or CockroachDB:
 # LNBITS_DATABASE_URL="postgres://user:password@host:port/databasename"
@@ -54,7 +54,7 @@ PHOENIXD_API_PASSWORD="your_phoenixd_key"
 #### **For Separate Local `phoenixd`**
 
 If `phoenixd` is running on a different machine or IP address, update `.env` to:
-```dotenv
+```
 LNBITS_DATA_FOLDER="./data"
 # Uncomment and adjust the line if using PostgreSQL or CockroachDB:
 # LNBITS_DATABASE_URL="postgres://user:password@host:port/databasename"
@@ -64,21 +64,9 @@ PHOENIXD_API_PASSWORD="your_phoenixd_key"
 ```
 Replace `<phoenixd-ip>` with the actual IP address or hostname of the machine running `phoenixd`.
 
-### **Install dependencies**
-```
-poetry install
-```
+## **3. Set Up phoenixd Using Pre-built Binaries**
 
-### **Run LNbits (Initial Test)**
-```
-poetry run lnbits --port 5000 --host 0.0.0.0
-```
-
-Check if LNbits is running at [http://127.0.0.1:5000](http://127.0.0.1:5000).
-
-## **3. Set up phoenixd using pre-built binaries**
-
-### **Download and extract phoenixd Binary**
+### **Download and Extract phoenixd Binary**
 
 1. **Download the appropriate binary for your system**:
    ```
@@ -97,13 +85,12 @@ Check if LNbits is running at [http://127.0.0.1:5000](http://127.0.0.1:5000).
    ./phoenix-0.3.4-linux-x64/phoenixd
    ```
 
-### **Set up Keyring for Phoenixd**
+### **Set Up Keyring for Phoenixd**
 
 1. **Find the Phoenix Key**:
    ```
    cat ~/.phoenix/phoenix.conf
    ```
-   - This file contains the path to your Phoenix key.
 
 2. **Secure the Keyring Directory**:
    ```
@@ -121,7 +108,7 @@ Check if LNbits is running at [http://127.0.0.1:5000](http://127.0.0.1:5000).
    export PHOENIX_KEY_PATH=~/.phoenix_key/phoenix_key
    ```
 
-## **4. Configure HTTPS and reverse proxy with Caddy**
+## **4. Configure HTTPS and Reverse Proxy with Caddy**
 
 ### **Install Caddy**
 ```
@@ -161,15 +148,17 @@ yourdomain.com {
 }
 ```
 
+Replace `yourdomain.com` with your actual domain and ensure DNS is configured to point to your VPS static IP.
+
 ### **Start Caddy**
 ```
 sudo systemctl start caddy
 sudo systemctl enable caddy
 ```
 
-## **5. Create systemd service files**
+## **5. Create Systemd Service Files**
 
-### **Create phoenixd service file**
+### **Create phoenixd Service File**
 ```
 sudo nano /etc/systemd/system/phoenixd.service
 ```
@@ -193,7 +182,7 @@ WantedBy=multi-user.target
 
 Replace `/path/to/phoenixd` with the actual path where you extracted `phoenixd`, and `youruser` with your actual username.
 
-### **Create LNbits service file**
+### **Create LNbits Service File**
 ```
 sudo nano /etc/systemd/system/lnbits.service
 ```
@@ -202,20 +191,24 @@ Add the following content:
 ```
 [Unit]
 Description=LNbits
-After=network.target
+# Uncomment these lines if you have a dependency like lnd
+#Wants=lnd.service
+#After=lnd.service
 
 [Service]
-ExecStart=/home/youruser/.local/bin/poetry run lnbits --port 5000 --host 0.0.0.0
-WorkingDirectory=/path/to/lnbits
+WorkingDirectory=/home/lnbits/lnbits
+ExecStart=/home/lnbits/.local/bin/poetry run lnbits
+User=lnbits
 Restart=always
-User=youruser
+TimeoutSec=120
+RestartSec=30
 Environment=PYTHONUNBUFFERED=1
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-### **Reload Systemd and start services**
+### **Reload Systemd and Start Services**
 ```
 sudo systemctl daemon-reload
 sudo systemctl start phoenixd
@@ -224,9 +217,11 @@ sudo systemctl start lnbits
 sudo systemctl enable lnbits
 ```
 
-## **6. Verify/Monitor running Services**
+## **6. Verify/Monitor Running Services**
 
-### **Create a script to check running services**
+### **Create a Script to Check Running Services on VPS**
+
+If `LNbits` and `Caddy` are on the same VPS, use the following script:
 ```
 nano ~/check_services.sh
 ```
@@ -253,29 +248,74 @@ else
 fi
 ```
 
+### **For Separate Machines**
+
+If `LNbits` and `Caddy` are on a different VPS, you can check their status remotely using SSH or a monitoring tool. Here's how you might adjust the script for remote checks:
+
+1. **Check Services Remotely**:
+
+   On your local machine, use SSH to check services on the remote VPS:
+   ```
+   ssh user@remote-vps-ip 'systemctl is-active --quiet phoenixd && echo "phoenixd is running." || echo "phoenixd is not running."'
+   ssh user@remote-vps-ip 'systemctl is-active --quiet lnbits && echo "LNbits is running." || echo "LNbits is not running."'
+   ssh user@remote-vps-ip 'systemctl is-active --quiet caddy && echo "Caddy is running." || echo "Caddy is not running."'
+   ```
+
+2. **Create a Combined Check Script**:
+
+   ```
+   nano ~/check_remote_services.sh
+   ```
+
+   Add the following content:
+   ```
+   #!/bin/bash
+
+   # Replace with your remote VPS IP and user
+   REMOTE_USER="user"
+   REMOTE_IP="remote-vps-ip"
+
+   echo "Checking services on remote VPS..."
+
+   ssh $REMOTE_USER@$REMOTE_IP 'systemctl is-active --quiet phoenixd && echo "phoenixd is running." || echo "phoenixd is not running."'
+   ssh $REMOTE_USER@$REMOTE_IP 'systemctl is-active --quiet lnbits && echo "LNbits is running." || echo "LNbits is not running."'
+   ssh $REMOTE_USER@$REMOTE_IP 'systemctl is-active --quiet caddy && echo "Caddy is running." || echo "Caddy is not running."'
+   ```
+
 ### **Make the Script Executable and Run It**
 ```
 chmod +x ~/check_services.sh
+chmod +x ~/check_remote_services.sh
 ~/check_services.sh
+~/check_remote_services.sh
 ```
 
-## **7. Start-skript to start all services in the right order**
+## **7. Start Script to Start All Services in the Right Order**
 
-### **7. Create the script**
+### **When `phoenixd` is Local and `LNbits`/`Caddy` are on a Separate VPS**
+
+In this setup, you'll need to ensure that `phoenixd` starts first on the local VPS, followed by `LNbits` and `Caddy` on the separate VPS. Here's how to adapt the script for this configuration:
+
+### **1. Create the Start Script on the Local VPS (where `phoenixd` is running)**
 ```
-nano ~/start_services.sh
+nano ~/start_services_local.sh
 ```
 
-### **2. Add the following content**
+### **Add the Following Content**
 ```
 #!/bin/bash
 
-# Start phoenixd first
+# Start phoenixd first (local VPS)
 echo "Starting phoenixd..."
 sudo systemctl start phoenixd
 sleep 5  # Wait for phoenixd to fully start
 
-# Start Caddy next
+# Notify the remote VPS to start LNbits and Caddy
+echo "Triggering remote VPS to start LNbits and Caddy..."
+ssh user@remote-vps-ip 'bash -s' << 'EOF'
+#!/bin/bash
+
+# Start Caddy (remote VPS)
 echo "Starting Caddy..."
 sudo systemctl start caddy
 sleep 5  # Wait for Caddy to fully start and set up HTTPS
@@ -284,17 +324,55 @@ sleep 5  # Wait for Caddy to fully start and set up HTTPS
 echo "Starting LNbits..."
 sudo systemctl start lnbits
 
-echo "All services started successfully in the correct order."
+echo "All services on remote VPS started successfully."
+EOF
+
+echo "All services started successfully on local and remote VPS."
 ```
 
-### **3. Make the script executable**
+Replace `user@remote-vps-ip` with the appropriate SSH user and IP address of the remote VPS where `LNbits` and `Caddy` are running.
+
+### **2. Make the Script Executable**
 ```
-chmod +x ~/start_services.sh
+chmod +x ~/start_services_local.sh
 ```
 
-### **4. Run the script and start all services**
+### **3. Run the Script on the Local VPS**
 ```
-./start_services.sh
+~/start_services_local.sh
+```
+
+### **When `LNbits`/`Caddy` are on the Remote VPS**
+
+### **1. Create a Start Script on the Remote VPS (where `LNbits` and `Caddy` are running)**
+```
+nano ~/start_services_remote.sh
+```
+
+### **Add the Following Content**
+```
+#!/bin/bash
+
+# Start Caddy first (remote VPS)
+echo "Starting Caddy..."
+sudo systemctl start caddy
+sleep 5  # Wait for Caddy to fully start and set up HTTPS
+
+# Finally, start LNbits
+echo "Starting LNbits..."
+sudo systemctl start lnbits
+
+echo "All services started successfully on remote VPS."
+```
+
+### **2. Make the Script Executable**
+```
+chmod +x ~/start_services_remote.sh
+```
+
+### **3. Run the Script on the Remote VPS**
+```
+~/start_services_remote.sh
 ```
 
 Adjust the `sleep` times if necessary to give more or less time for the services to start.
