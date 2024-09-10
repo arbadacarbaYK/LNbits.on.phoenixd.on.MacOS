@@ -1,7 +1,4 @@
----
-# Changes needed for other distros
----
-
+# **Changes Needed for Other Distros**
 
 ### **1. CentOS / RHEL (Red Hat Enterprise Linux)**
 
@@ -9,13 +6,13 @@
 
 - **Install System Packages**: Use `yum` or `dnf` for package installation.
   ```sh
-  sudo yum update -y
-  sudo yum install -y curl git python3-pip python3-venv postgresql-server postgresql-contrib
+  sudo dnf update -y
+  sudo dnf install -y curl git python3-pip python3-venv postgresql-server postgresql-contrib
   ```
 
 - **Install PostgreSQL**: Initialize and start the PostgreSQL service.
   ```sh
-  sudo postgresql-setup initdb
+  sudo postgresql-setup --initdb
   sudo systemctl start postgresql
   sudo systemctl enable postgresql
 
@@ -23,17 +20,17 @@
   sudo -u postgres psql -c "CREATE DATABASE lnbits OWNER postgres;"
   ```
 
-- **Install Poetry**: Same as other systems, install via `curl`.
+- **Install Poetry**: Same as other systems.
   ```sh
   curl -sSL https://install.python-poetry.org | python3 -
   export PATH="$HOME/.local/bin:$PATH"
   ```
 
-- **Install Caddy**: Download the RPM from the Caddy website or use their repository setup.
+- **Install Caddy**: Use the official repository for Caddy.
   ```sh
-  sudo yum install -y yum-utils
-  sudo yum-config-manager --add-repo https://repo.caddyserver.com/stable/caddy.repo
-  sudo yum install caddy
+  sudo dnf install -y yum-utils
+  sudo dnf config-manager --add-repo https://repo.caddyserver.com/stable/caddy.repo
+  sudo dnf install caddy
   ```
 
 - **Configure phoenixd Key Management**
@@ -56,7 +53,7 @@
      PHOENIXD_PUBLIC_KEY="/path/to/phoenixd_public.key"
      ```
 
-- **Service Files**: The systemd service files remain the same as on Ubuntu or Debian.
+- **Service Files**: Use the same systemd service files as on Ubuntu/Debian.
 
 ---
 
@@ -166,6 +163,6 @@
      PHOENIXD_PUBLIC_KEY="/path/to/phoenixd_public.key"
      ```
 
-- **Service Files**: The same systemd service files as on Ubuntu/Debian.
+- **Service Files**: Use the same systemd service files as on Ubuntu/Debian.
 
 ---
