@@ -348,3 +348,6 @@ sudo systemctl start caddy
 ```
 
 ---
+
+Another guide can be found here that includes setting up of the VPS iteself also
+https://danielpcostas.dev/install-lnbits-phoenixd-vps-ubuntu/
