@@ -262,10 +262,11 @@ sudo ufw enable
 
 ### **Create a Script to Check Running Services**
 
-#### **Scenario 1: All Services Locally**
 ```
 nano ~/check_services.sh
 ```
+#### **Scenario 1: All Services Locally**
+
 Add:
 ```
 #!/bin/bash
@@ -349,5 +350,5 @@ sudo systemctl start caddy
 
 ---
 
-Another guide can be found here that includes setting up of the VPS iteself also
-https://danielpcostas.dev/install-lnbits-phoenixd-vps-ubuntu/
+Another guide can be found here that includes setting up of the VPS itself also
+https://danielpcostas.dev/install-lnbits-phoenixd-vps-ubuntu/ and also here https://ereignishorizont.xyz/blitzbank/
